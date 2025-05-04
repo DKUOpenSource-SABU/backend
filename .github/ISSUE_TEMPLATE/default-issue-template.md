@@ -1,7 +1,7 @@
 ---
 name: Default Issue Template
 about: Default Issue Template
-title: "[feat, fix, docs, style, refactor, test, chore, perf, ci] 간결하고 명확한 설명"
+title: "✨feat, 🐛fix, 📝docs, 🎨style, ♻️refactor, ✅test, 🔧chore, ⚡️perf, 👷ci: 간결하고 명확한 설명"
 labels: ''
 assignees: ''
 
