@@ -1,5 +1,6 @@
 import os
 import time
+import datetime
 
 import requests
 import pandas as pd
@@ -11,7 +12,8 @@ END_DATE = '2025-05-11'
 def get_ticker_data(ticker):
 
     url = f'https://api.tiingo.com/tiingo/daily/{ticker}/prices?token=\
-            {TIINGO_TOKEN}&startDate={START_DATE}&endDate={END_DATE}&format=csv'
+{TIINGO_TOKEN}&startDate={START_DATE}&endDate={END_DATE}&format=csv'
+    print(f"Requesting {url}")
     headers = {
         'Content-Type': 'application/json',
     }
@@ -20,14 +22,15 @@ def get_ticker_data(ticker):
     if r.status_code == 200:
         if ':' in str(r.content).strip():
             print(f"API request limit reached. Please try again later.")
-            print("Sleep 1 hour")
-            time.sleep(3600)  # 1시간 대기
+            print(f"[{datetime.datetime.now()}] Sleep 10 minites")
+            time.sleep(600)  # 1시간 대기
             return True
         with open(f'./stock/{ticker}.csv', 'wb') as f:
             f.write(r.content)
         print(f"✅ {ticker} data downloaded successfully.")
     else:
         print(f"❌ Error: {r.status_code} - {r.text}")
+        return True
     return False
 
 def open_csv_get_ticker():
