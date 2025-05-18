@@ -42,6 +42,21 @@ async function run() {
   await new Promise(resolve => setTimeout(resolve, 10000));
 
   console.log('다운로드 완료!');
+  console.log('다운로드된 파일 업데이트 중...');
+  const downloadedFiles = fs.readdirSync(downloadPath);
+  const latestFile = downloadedFiles
+    .map(file => ({
+      name: file,
+      time: fs.statSync(path.join(downloadPath, file)).mtime.getTime()
+    }))
+    .sort((a, b) => b.time - a.time)[0]?.name;
+  if (latestFile) {
+    const sourceFile = path.join(downloadPath, latestFile);
+    const destinationFile = path.resolve(__dirname, 'ticker.csv');
+    fs.copyFileSync(sourceFile, destinationFile);
+  }
+  console.log('다운로드된 파일 이름:', latestFile);
+
   await browser.close();
 }
 

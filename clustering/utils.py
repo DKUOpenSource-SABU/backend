@@ -5,7 +5,7 @@ import pandas as pd
 import glob
 
 def read_csv_files():
-    base_path = '../collect/stock/'
+    base_path = './collect/stock/'
     all_files = glob.glob(os.path.join(base_path, "*.csv"))
 
     df_list = []
