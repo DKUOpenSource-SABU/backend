@@ -11,10 +11,10 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,            # ✅ 허용할 Origin
-    allow_credentials=True,           # ✅ 쿠키 인증 등 포함할지
-    allow_methods=["*"],              # ✅ 허용할 HTTP method (GET, POST 등)
-    allow_headers=["*"],              # ✅ 허용할 요청 헤더
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(search.router, prefix="/search")

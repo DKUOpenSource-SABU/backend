@@ -11,5 +11,3 @@ def download_etf_csv():
     if result.returncode != 0:
         print("❌ 오류 발생:")
         print(result.stderr)
-
-download_etf_csv()

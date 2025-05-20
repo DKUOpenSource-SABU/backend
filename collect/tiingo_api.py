@@ -21,20 +21,32 @@ def get_ticker_data(ticker):
     r = requests.get(url, headers=headers)
     if r.status_code == 200:
         if ':' in str(r.content).strip():
-            print(f"API request limit reached. Please try again later.")
-            print(f"[{datetime.datetime.now()}] Sleep 10 minites")
-            time.sleep(600)  # 1시간 대기
-            return True
+            if '^' in str(r.content).strip():
+                return False
+            print(f"❌ Error: {r.status_code} - {r.text}")
+            user_input = int(input("Input 1 Retry..."))
+            if user_input == 1:
+                print("Retrying...")
+                time.sleep(5)
+                return True
+            else:
+                print("Next...")
+                return False
+            return False
         with open(f'./stock/{ticker}.csv', 'wb') as f:
             f.write(r.content)
         print(f"✅ {ticker} data downloaded successfully.")
     else:
         print(f"❌ Error: {r.status_code} - {r.text}")
-        return True
+        return False
     return False
 
 def open_csv_get_ticker():
-    df = pd.read_csv('./ticker.csv', encoding='utf-8')
+    df_stock = pd.read_csv('./ticker_stock.csv', encoding='utf-8')
+    df_stock = df_stock.rename(columns={'Symbol': 'SYMBOL', 'Name': 'NAME', 'Last Sale': 'LAST PRICE', '% Change': '% CHANGE', 'Sector' : 'SECTOR'})
+    df_etf = pd.read_csv('./ticker_etf.csv', encoding='utf-8')
+    common_cols = df_etf.columns.intersection(df_stock.columns)
+    df = pd.concat([df_stock[common_cols], df_etf[common_cols]], ignore_index=True).dropna()
     return (df['SYMBOL'][:-1])
 
 df = open_csv_get_ticker()
