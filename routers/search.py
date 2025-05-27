@@ -71,5 +71,5 @@ async def get_ticker_news(ticker: str):
     return data
 
 @router.get("/cluster")
-def search_by_cluster(clusterId: int):
+async def search_by_cluster(clusterId: int):
     pass

@@ -65,6 +65,7 @@ def load_stock_csv(ticker: str):
         raise FileNotFoundError(f"{ticker}.csv not found in ./stock")
 
     df = pd.read_csv(path, parse_dates=['date'])
+    df['close'] = df['adjClose']
     df = df.sort_values('date')  # 날짜 순 정렬
     return df
 
