@@ -1,12 +1,19 @@
 from fastapi import APIRouter, Body
 from typing import List, Optional
-from core.db import get_all_tickers
 import api.tiingo as tiingo
+
+from core.db import get_all_tickers
 
 router = APIRouter()
 
+# ---------- Ticker 관련 API ----------
+
+# Ticker 검색 API
+# 클러스터 필터링을 지원하며, 최대 50개의 결과를 반환합니다.
+# 작성자 : 김태형
 @router.post("/ticker")
-async def search_ticker(query: str, clusters: Optional[List[int]] = Body(None, embed=True)):
+async def search_ticker(query: str, 
+                        clusters: Optional[List[int]] = Body(None, embed=True)):
     all_tickers = get_all_tickers()
     query_upper = query.upper()
     if clusters:
@@ -22,6 +29,8 @@ async def search_ticker(query: str, clusters: Optional[List[int]] = Body(None, e
 
     return {"results": results}
 
+# Ticker의 일간 데이터를 가져오는 API
+# 작성자 : 김태형
 @router.get("/ticker/daily")
 async def get_ticker_data_daily(ticker: str):
     ticker = ticker.upper()
@@ -30,6 +39,8 @@ async def get_ticker_data_daily(ticker: str):
         return {"error": "Ticker not found"}
     return data
 
+# Ticker의 주간 데이터를 가져오는 API
+# 작성자 : 김태형
 @router.get("/ticker/weekly")
 async def get_ticker_data_weekly(ticker: str):
     ticker = ticker.upper()
@@ -38,6 +49,8 @@ async def get_ticker_data_weekly(ticker: str):
         return {"error": "Ticker not found"}
     return data
 
+# Ticker의 월간 데이터를 가져오는 API
+# 작성자 : 김태형
 @router.get("/ticker/monthly")
 async def get_ticker_data_monthly(ticker: str):
     ticker = ticker.upper()
@@ -46,6 +59,8 @@ async def get_ticker_data_monthly(ticker: str):
         return {"error": "Ticker not found"}
     return data
 
+# Ticker의 연간 데이터를 가져오는 API
+# 작성자 : 김태형
 @router.get("/ticker/annual")
 async def get_ticker_data_annual(ticker: str):
     ticker = ticker.upper()
@@ -54,6 +69,8 @@ async def get_ticker_data_annual(ticker: str):
         return {"error": "Ticker not found"}
     return data
 
+# Ticker의 메타데이터를 가져오는 API
+# 작성자 : 김태형
 @router.get("/ticker/meta")
 async def get_ticker_data_meta(ticker: str):
     ticker = ticker.upper()
@@ -62,6 +79,8 @@ async def get_ticker_data_meta(ticker: str):
         return {"error": "Ticker not found"}
     return data
 
+# Ticker의 뉴스 데이터를 가져오는 API
+# 작성자 : 김태형
 @router.get("/ticker/news")
 async def get_ticker_news(ticker: str):
     ticker = ticker.upper()
@@ -69,7 +88,3 @@ async def get_ticker_news(ticker: str):
     if data is None:
         return {"error": "Ticker not found"}
     return data
-
-@router.get("/cluster")
-async def search_by_cluster(clusterId: int):
-    pass

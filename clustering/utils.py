@@ -5,6 +5,10 @@ import pandas as pd
 import glob
 from tqdm import tqdm
 
+# -------- CSV 파일을 읽어와서 데이터프레임으로 반환하는 스크립트 --------
+# 작성자 : 김태형
+# 이 스크립트는 ./collect/stock/ 폴더에 있는 모든 CSV 파일을 읽어 df로 변환
+# tqdm을 사용하여 진행 상황을 표시합니다.
 def read_csv_files():
     base_path = './collect/stock/'
     all_files = glob.glob(os.path.join(base_path, "*.csv"))

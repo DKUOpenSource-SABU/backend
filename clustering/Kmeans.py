@@ -1,11 +1,18 @@
+import warnings
+
 from clustering import utils
 from sklearn.preprocessing import RobustScaler
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 import numpy as np
 
-import warnings
+# 클러스터링 진행 중 발생하는 numpy 경고 무시
 warnings.filterwarnings("ignore", category=RuntimeWarning)
+
+# KMeans 클러스터링을 수행하는 함수
+# 작성자 : 김태형
+# 이 함수는 주어진 티커 목록에 대해 임시 KMeans 클러스터링을 수행
+# 정확한 클러스터링과 무관하게 단순 클러스터링 결과를 반환합니다.
 def k_means(tickers):
     df = utils.read_csv_files()
     df = df.fillna(df.mean(numeric_only=True))
@@ -25,7 +32,8 @@ def k_means(tickers):
         'splitFactor': 'sum'
     })
 )
-    features_by_ticker.columns = ['_'.join(col).strip() for col in features_by_ticker.columns.values]
+    features_by_ticker.columns = ['_'.join(col).strip() 
+                                  for col in features_by_ticker.columns.values]
     features_by_ticker.reset_index(inplace=True)
 
     X = features_by_ticker.drop(columns=['ticker'])
