@@ -4,6 +4,7 @@ import glob
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.ensemble import IsolationForest
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
@@ -14,7 +15,7 @@ from sklearn.metrics import calinski_harabasz_score
 
 
 def read_csv_files(tickers=None):
-    base_path = '../data/stock/'
+    base_path = os.path.abspath('../data/stock/')
     all_files = glob.glob(os.path.join(base_path, "*.csv"))
     
     # tickers가 주어지면 해당 ticker만 필터링
@@ -151,6 +152,16 @@ def make_feature_df(df_list):
     return features_df
 
 
+def find_outlier(df):
+    clf = IsolationForest(contamination=0.05, random_state=42)  # 전체의 5%를 이상치로 간주
+    clf.fit(df.drop(columns=['ticker']))
+    df['outlier'] = clf.predict(df.drop(columns=['ticker']))
+    
+    normal_df = df[df['outlier'] == 1].copy().drop(columns=['outlier'])
+    normal_df = normal_df.reset_index(drop=True)
+    return normal_df
+
+
 def optimization_k(df):
     inertias = []  # SSE
     
@@ -191,7 +202,8 @@ def k_means(tickers=None):
     start_date, end_date = find_shortest_period(df_list)
     filtered_df_list = removed_stocks(df_list, end_date)
     trimmed_list = same_period(filtered_df_list, start_date, end_date)
-    df = make_feature_df(trimmed_list)
+    features_df = make_feature_df(trimmed_list)
+    df = find_outlier(features_df)
 
     # 표준화
     scaler = StandardScaler()
