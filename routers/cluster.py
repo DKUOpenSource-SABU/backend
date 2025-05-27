@@ -1,10 +1,11 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from models.schemas import TickerList
-from clustering.Kmeans import *
+from clustering.kmeans_module import *
 import matplotlib
 
-from core.db import get_pretrained_data, get_hull_list
+from core.db import get_pretrained_data, get_hull_list, get_tickers_by_symbol
+import clustering.recommend
 
 matplotlib.use('Agg')
 router = APIRouter()
@@ -29,9 +30,13 @@ def cluster_analyze(pre: str, data: TickerList):
 
 # Ticker 추천 API
 # 클러스터링 결과를 기반으로 추천 티커를 반환하는 API
-# 작성자 : 
+# 작성자 : 김태형
 @router.post("/recommend")
 def recommend(data: TickerList):
-    return {
-        "recommendations": ["NVDA", "MSFT"]  # 더미 추천
-    }
+    top5_tickers = clustering.recommend.recommend(data.tickers)
+    if top5_tickers is None or top5_tickers.empty:
+        return JSONResponse(status_code=404, content={"error": "No recommendations found."})
+    res = get_tickers_by_symbol(top5_tickers["ticker"].tolist())
+    if not res:
+        return JSONResponse(status_code=404, content={"error": "No recommendations found."})
+    return res

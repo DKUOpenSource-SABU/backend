@@ -1,21 +1,27 @@
 import numpy as np
 from sklearn.metrics.pairwise import euclidean_distances
 
-import kmeans_module
-
+import clustering.kmeans_module
+import core.db
 
 def recommend(tickers):
-    result_df = kmeans_module.k_means()
+    result_df = core.db.get_pretrained_data()
     pc_cols = ['PC1', 'PC2']
 
     # 선택한 종목의 행만 추출
-    selected_rows = result_df[result_df['ticker'].isin(tickers)]
+    selected_rows = result_df[result_df['ticker'].isin(tickers)].dropna(subset=pc_cols)
+    if selected_rows.empty:
+        print("No selected rows found for the given tickers.")
+        return None
 
     # 선택한 종목의 PC1, PC2를 이용하여 평균 지점 계산
-    center_point = selected_rows[pc_cols].mean(axis=0).values.reshape(1, -1)
+    center_point = selected_rows[pc_cols].mean(axis=0) \
+                                        .values.reshape(1, -1)
 
     # 전체 종목의 PC1, PC2 좌표
     all_points = result_df[pc_cols].values
+    print("center_point.shape:", center_point)
+    print("all_points.shape:", all_points.shape)
 
     # 중심점과 전체 종목 간 거리 계산
     distances = euclidean_distances(center_point, all_points).flatten()
@@ -33,7 +39,8 @@ def recommend(tickers):
     return result_df.iloc[top5_indices]
 
 
-# 사용자가 선택했다고 가정(예시 데이터)
-selected_ticker = ['NUWE', 'CCM', 'DISTW', 'ALLR', 'QSIAW']
-
-recommend(selected_ticker)
+if __name__ == "__main__":
+    # 사용자가 선택했다고 가정(예시 데이터)
+    selected_ticker = ['NUWE', 'CCM', 'DISTW', 'ALLR', 'QSIAW']
+    # 추천 종목 출력
+    recommend(selected_ticker)

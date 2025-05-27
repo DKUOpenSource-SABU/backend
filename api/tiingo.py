@@ -56,7 +56,7 @@ def get_ticker_news(ticker):
     url = f'https://api.tiingo.com/tiingo/news/?tickers={ticker}&token={TIINGO_TOKEN}&limit=10'
     return safe_tiingo_request(url)
 
-STOCK_DIR = './collect/stock'
+STOCK_DIR = './data/stock'
 
 
 def load_stock_csv(ticker: str):

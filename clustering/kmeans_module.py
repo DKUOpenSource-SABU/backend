@@ -1,5 +1,6 @@
 import os
 import glob
+import warnings
 
 import pandas as pd
 import numpy as np
@@ -9,9 +10,11 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
 
+# 클러스터링 진행 중 발생하는 numpy 경고 무시
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 def read_csv_files(tickers=None):
-    base_path = os.path.abspath('../data/stock/')
+    base_path = os.path.abspath('./data/stock/')
     all_files = glob.glob(os.path.join(base_path, "*.csv"))
     
     # tickers가 주어지면 해당 ticker만 필터링

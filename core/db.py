@@ -6,26 +6,26 @@ from scipy.spatial import ConvexHull
 import numpy as np
 from pathlib import Path
 
-from clustering.Kmeans import *
+from clustering.kmeans_module import k_means
 
 
 # ------- DB 초기화 및 데이터 로딩 ------
 # 작성자 : 김태형
-if not os.path.exists('./collect/ticker_etf.csv') or \
-    not os.path.exists('./collect/ticker_stock.csv'):
+if not os.path.exists('./data/ticker_etf.csv') or \
+    not os.path.exists('./data/ticker_stock.csv'):
     raise FileNotFoundError("필요한 CSV 파일이 존재하지 않습니다. \
-                            ./collect/ 폴더에 ticker_etf.csv와 \
+                            ./data/ 폴더에 ticker_etf.csv와 \
                             ticker_stock.csv 파일이 있어야 합니다.")
 print("DB Initialize...")
 
 # ETF 티커 데이터 로딩 및 전처리
-df_etf = pd.read_csv('./collect/ticker_etf.csv', encoding='utf-8')
+df_etf = pd.read_csv('./data/ticker_etf.csv', encoding='utf-8')
 df_etf = df_etf.iloc[:-1]
 df_etf = df_etf.drop("1 yr % CHANGE", axis=1)
 df_etf['SECTOR'] = "ETF"
 
 # 주식 티커 데이터 로딩 및 전처리
-df_stock = pd.read_csv('./collect/ticker_stock.csv', encoding='utf-8')
+df_stock = pd.read_csv('./data/ticker_stock.csv', encoding='utf-8')
 df_stock = df_stock.rename(columns={'Symbol': 'SYMBOL', 
                                     'Name': 'NAME',
                                     'Last Sale': 'LAST PRICE', 
@@ -61,6 +61,8 @@ def get_pretrained_data_db(df_symbols=df['SYMBOL'][:-1].tolist(),
         
     print("🧮 k_means 재계산 중 …")
     pretrained_data = k_means(df_symbols)
+    if pretrained_data is None:
+        raise ValueError("k_means 함수가 None을 반환했습니다. 데이터 확인이 필요합니다.")
     cache_path.parent.mkdir(parents=True, exist_ok=True)
 
     with cache_path.open("wb") as f:
@@ -116,3 +118,17 @@ def get_hull_list():
 def get_pretrained_data():
     global pretrained_data
     return pretrained_data
+
+# 심볼을 통해서 티커 정보를 반환하는 함수
+# 작성자 : 김태형
+def get_tickers_by_symbol(symbols):
+    global df
+    if isinstance(symbols, str):
+        symbols = [symbols]
+    return {
+        row["SYMBOL"]: {
+            **row,
+            "CLUSTER": cluster_map.get(row["SYMBOL"], None)
+        }
+        for row in df[df["SYMBOL"].isin(symbols)].to_dict(orient="records")
+    }
