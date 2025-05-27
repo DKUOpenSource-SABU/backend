@@ -35,8 +35,10 @@ def cluster_analyze(pre: str, data: TickerList):
 def recommend(data: TickerList):
     top5_tickers = clustering.recommend.recommend(data.tickers)
     if top5_tickers is None or top5_tickers.empty:
-        return JSONResponse(status_code=404, content={"error": "No recommendations found."})
+        return JSONResponse(status_code=404,
+                            content={"error": "No recommendations found."})
     res = get_tickers_by_symbol(top5_tickers["ticker"].tolist())
     if not res:
-        return JSONResponse(status_code=404, content={"error": "No recommendations found."})
-    return res
+        return JSONResponse(status_code=404,
+                            content={"error": "No recommendations found."})
+    return [item for symbol, item in res.items()][:50]
