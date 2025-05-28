@@ -14,14 +14,31 @@ class SmaCrossStrategy(bt.Strategy):
         }
         self.last_rebalance = None
         self.first_run = True
+        self.monthly_values = {}
+        self.last_month = None
+        self.monthly_drawdown = {}
+        self.month_peak = {}
 
     def next(self):
         dt = self.datas[0].datetime.date(0)
+        current_month = dt.strftime('%Y-%m')
+        value = self.broker.getvalue()
 
-        if self.p.rebalance_mode == "none":
-            if self.first_run:
-                self.rebalance_portfolio()
-                self.first_run = False
+        if current_month != self.last_month:
+            if self.last_month is not None:
+                peak = self.month_peak.get(self.last_month, value)
+                drawdown = (peak - value) / peak * 100 if peak > 0 else 0.0
+                self.monthly_drawdown[self.last_month] = round(drawdown, 2)
+
+            self.monthly_values[current_month] = value
+            self.month_peak[current_month] = value
+            self.last_month = current_month
+        else:
+            self.month_peak[current_month] = max(self.month_peak.get(current_month, value), value)
+
+        if not hasattr(self, 'rebalanced'):
+            self.rebalance_portfolio()
+            self.rebalanced = True
 
         elif self.p.rebalance_mode == "monthly":
             if not self.last_rebalance or dt.month != self.last_rebalance.month:
@@ -30,8 +47,8 @@ class SmaCrossStrategy(bt.Strategy):
 
         elif self.p.rebalance_mode == "quarterly":
             if (
-                not self.last_rebalance
-                or (dt.month - 1) // 3 != (self.last_rebalance.month - 1) // 3
+                    not self.last_rebalance
+                    or (dt.month - 1) // 3 != (self.last_rebalance.month - 1) // 3
             ):
                 self.rebalance_portfolio()
                 self.last_rebalance = dt
@@ -46,6 +63,14 @@ class SmaCrossStrategy(bt.Strategy):
                 self.buy(data=data, size=size)
             elif fast[0] < slow[0] and pos > 0:
                 self.close(data=data)
+
+
+    def stop(self):
+        if self.last_month and self.last_month not in self.monthly_drawdown:
+            value = self.broker.get_value()
+            peak = self.month_peak.get(self.last_month, value)
+            drawdown = (peak - value) / peak * 100 if peak > 0 else 0.0
+            self.monthly_drawdown[self.last_month] = round(drawdown, 2)
 
 
 class SmaCross:
@@ -73,7 +98,6 @@ class SmaCross:
 
             cerebro.addstrategy(SmaCrossStrategy, rebalance_mode=mode)
 
-            # Add analyzers
             cerebro.addanalyzer(bt.analyzers.Returns, _name="returns")
             cerebro.addanalyzer(
                 bt.analyzers.TimeReturn, _name="timereturn", timeframe=bt.TimeFrame.Years
@@ -82,6 +106,13 @@ class SmaCross:
             cerebro.addanalyzer(bt.analyzers.AnnualReturn, _name="annual")
 
             result = cerebro.run()[0]
+            monthly_values = result.monthly_values
+            monthly_drawdown = result.monthly_drawdown
+
+            sorted_months = sorted(monthly_values.keys())
+            portfolio_value = [monthly_values[m] for m in sorted_months]
+            drawdown_series = [monthly_drawdown[m] for m in sorted_months]
+            dates = sorted_months
 
             analyzers = {
                 "returns": result.analyzers.returns.get_analysis(),
@@ -90,12 +121,11 @@ class SmaCross:
                 "annual": result.analyzers.annual.get_analysis(),
             }
 
-            portfolio_value = [result.broker.get_value()]
-
             results.append({
                 "strategy": "sma_cross",
                 "rebalance": mode,
                 "portfolio_value": portfolio_value,
+                "drawdown_series": drawdown_series,
                 "dates": dates,
                 "prices": prices,
                 "analyzers": analyzers,
