@@ -10,7 +10,7 @@ from sklearn.preprocessing import StandardScaler
 
 
 
-def read_csv_files(tickers=None):
+def read_csv_files_year_filter(tickers=None):
     base_path = os.path.abspath('../data/stock/')
     all_files = glob.glob(os.path.join(base_path, "*.csv"))
     
@@ -184,7 +184,7 @@ def optimization_k(df):
 
 
 def k_means(tickers=None):
-    df_list = read_csv_files(tickers)
+    df_list = read_csv_files_year_filter(tickers)
     if not df_list:
         print("선택한 티커에 해당하는 데이터가 없습니다.")
         return None
