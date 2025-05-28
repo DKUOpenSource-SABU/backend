@@ -13,7 +13,7 @@ from sklearn.preprocessing import StandardScaler
 # 클러스터링 진행 중 발생하는 numpy 경고 무시
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-def read_csv_files(tickers=None):
+def read_csv_files_year_filter(tickers=None):
     base_path = os.path.abspath('./data/stock/')
     all_files = glob.glob(os.path.join(base_path, "*.csv"))
     
