@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 // 다운로드 경로 설정
-const downloadPath = path.resolve(__dirname, 'downloads');
+const downloadPath = path.resolve(__dirname, '../data/downloads');
 if (!fs.existsSync(downloadPath)) fs.mkdirSync(downloadPath);
 
 // Nasdaq ETF 데이터를 다운로드하는 스크립트
@@ -58,7 +58,7 @@ async function run() {
     .sort((a, b) => b.time - a.time)[0]?.name;
   if (latestFile) {
     const sourceFile = path.join(downloadPath, latestFile);
-    const destinationFile = path.resolve(__dirname, 'ticker_etf.csv');
+    const destinationFile = path.resolve(__dirname, '../data/ticker_etf.csv');
     fs.copyFileSync(sourceFile, destinationFile);
   }
   console.log('다운로드된 파일 이름:', latestFile);
@@ -119,7 +119,7 @@ async function run2() {
     .sort((a, b) => b.time - a.time)[0]?.name;
   if (latestFile) {
     const sourceFile = path.join(downloadPath, latestFile);
-    const destinationFile = path.resolve(__dirname, 'ticker_stock.csv');
+    const destinationFile = path.resolve(__dirname, '../data/ticker_stock.csv');
     fs.copyFileSync(sourceFile, destinationFile);
   }
   console.log('다운로드된 파일 이름:', latestFile);
