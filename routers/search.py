@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Body
 from typing import List, Optional
 import api.tiingo as tiingo
+import api.finBERT as finbert
 
 from core.db import get_all_tickers
 
@@ -87,4 +88,6 @@ async def get_ticker_news(ticker: str):
     data = tiingo.get_ticker_news(ticker)
     if data is None:
         return {"error": "Ticker not found"}
+    for item in data:
+        item["semantic"] = finbert.semantic_analysis(item["title"])[0]["label"]
     return data
