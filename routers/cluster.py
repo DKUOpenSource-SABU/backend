@@ -35,6 +35,9 @@ def cluster_analyze(pre: str, data: TickerList):
 # 작성자 : 김태형
 @router.post("/recommend")
 def recommend(data: TickerList):
+    if data.tickers is None:
+        return JSONResponse(status_code=400,
+                            content={"error": "Ticker list cannot be empty."})
     top5_tickers = clustering.recommend.recommend(data.tickers)
     if top5_tickers is None or top5_tickers.empty:
         return JSONResponse(status_code=404,
