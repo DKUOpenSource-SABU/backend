@@ -224,8 +224,9 @@ def k_means(tickers=None):
     # 이상치 데이터 스케일링
     outlier_scaled = scaler.transform(outlier_df.drop(columns=['ticker']))
 
-    # 이상치 데이터 클러스터 -1로 표기 
-    outlier_df.loc[:, 'cluster'] = -1
+    # 학습된 클러스터링 모델에 이상치 데이터 넣어 분류
+    outlier_clusters = kmeans.predict(outlier_scaled)
+    outlier_df.loc[:, 'cluster'] = outlier_clusters
 
     # 이상치 데이터 2차원 축소
     outlier_pca = pca.transform(outlier_scaled)
