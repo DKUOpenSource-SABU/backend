@@ -4,16 +4,12 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
-from kmeans_module import read_csv_files_year_filter
-from kmeans_module import find_shortest_period
-from kmeans_module import removed_stocks
-from kmeans_module import same_period
-from kmeans_module import make_feature_df
+from clustering.kmeans_module import *
 
 
 
 def read_stock_sector():
-    ticker_stock = pd.read_csv('../data/ticker_stock.csv')
+    ticker_stock = pd.read_csv('./data/ticker_stock.csv')
     ticker_stock = ticker_stock.dropna()
     ticker_stock = ticker_stock.rename(columns={
         'Symbol': 'ticker', 'Sector': 'sector'})
@@ -88,32 +84,33 @@ def sector_visualization():
     avg_df['PC1'] = X_pca[:, 0]
     avg_df['PC2'] = X_pca[:, 1]
 
-    '''지워도 되는 부분'''
-    # Sector별 색상 지정
-    sector_colors = {
-        'Industrials': '#1f77b4',           # 파랑
-        'Real Estate': '#2ca02c',           # 초록
-        'Finance': '#d62728',               # 빨강
-        'Technology': '#9467bd',            # 보라
-        'Health Care': '#8c564b',           # 갈색
-        'Consumer Staples': '#e377c2',      # 핑크
-        'Consumer Discretionary': '#7f7f7f',# 회색
-        'Energy': '#bcbd22',                # 올리브
-        'Utilities': '#aec7e8',             # 밝은 파랑
-        'Basic Materials': '#ffbb78',       # 밝은 오렌지
-        'Telecommunications': '#98df8a'     # 밝은 초록
-    }
+    # if __name__ == "__main__":
+    #     '''지워도 되는 부분'''
+    #     # Sector별 색상 지정
+    #     sector_colors = {
+    #         'Industrials': '#1f77b4',           # 파랑
+    #         'Real Estate': '#2ca02c',           # 초록
+    #         'Finance': '#d62728',               # 빨강
+    #         'Technology': '#9467bd',            # 보라
+    #         'Health Care': '#8c564b',           # 갈색
+    #         'Consumer Staples': '#e377c2',      # 핑크
+    #         'Consumer Discretionary': '#7f7f7f',# 회색
+    #         'Energy': '#bcbd22',                # 올리브
+    #         'Utilities': '#aec7e8',             # 밝은 파랑
+    #         'Basic Materials': '#ffbb78',       # 밝은 오렌지
+    #         'Telecommunications': '#98df8a'     # 밝은 초록
+    #     }
 
-    plt.figure(figsize=(8, 6))
-    for sector, color in sector_colors.items():
-        subset = avg_df[avg_df['sector'] == sector]
-        plt.scatter(subset['PC1'], subset['PC2'], label=sector, color=color, s=100, alpha=0.7)
+    #     plt.figure(figsize=(8, 6))
+    #     for sector, color in sector_colors.items():
+    #         subset = avg_df[avg_df['sector'] == sector]
+    #         plt.scatter(subset['PC1'], subset['PC2'], label=sector, color=color, s=100, alpha=0.7)
 
-    plt.xlabel('PC1')
-    plt.ylabel('PC2')
-    plt.title('Sector Distribution')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+    #     plt.xlabel('PC1')
+    #     plt.ylabel('PC2')
+    #     plt.title('Sector Distribution')
+    #     plt.legend()
+    #     plt.grid(True)
+    #     plt.show()
 
     return avg_df[['sector', 'PC1', 'PC2']]
