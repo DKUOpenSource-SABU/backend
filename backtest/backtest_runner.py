@@ -1,9 +1,9 @@
-from app.strategies.buy_and_hold import BuyAndHold
-from app.strategies.sma_cross import SmaCross
-from app.strategies.rsi import Rsi
-from app.services.data_provider import load_data
-from app.utils.calculate_metrics import calculate_metrics
-from app.models.request_models import BacktestRequest
+from backtest.buy_and_hold import BuyAndHold
+from backtest.sma_cross import SmaCross
+from backtest.rsi import Rsi
+from backtest.data_provider import load_data
+from backtest.utils import calculate_metrics
+from models.request_models import BacktestRequest
 
 STRATEGIES = [BuyAndHold, SmaCross, Rsi]
 

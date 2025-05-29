@@ -1,6 +1,5 @@
 import backtrader as bt
 
-
 class SmaCrossStrategy(bt.Strategy):
     params = dict(fast=20, slow=50, rebalance_mode="none")
 

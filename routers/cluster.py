@@ -6,8 +6,6 @@ import matplotlib
 
 from core.db import get_pretrained_data, get_hull_list, get_tickers_by_symbol, get_pretrained_sectors
 import clustering.recommend
-import clustering.sector_visualization
-
 matplotlib.use('Agg')
 router = APIRouter()
 
