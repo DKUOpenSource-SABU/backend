@@ -1,11 +1,14 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from models.schemas import TickerList
+from models.schemas import RatioList
 from clustering.kmeans_module import *
 import matplotlib
 
 from core.db import get_pretrained_data, get_hull_list, get_tickers_by_symbol, get_pretrained_sectors
 import clustering.recommend
+from clustering.diversification_score import diversification_score_mixed
+
 matplotlib.use('Agg')
 router = APIRouter()
 
@@ -53,3 +56,19 @@ def sector_analyze():
     }
     return res
 
+@router.post("/score")
+def score(data: RatioList):
+    df = get_pretrained_data()
+    selected_tickers = [item.ticker for item in data.ratios]
+    weights = {item.ticker: item.ratio / 100 for item in data.ratios}
+    
+    # 클러스터 분포 기반 점수화
+    cluster_score = diversification_score_mixed(df, selected_tickers, weights)
+    
+    if cluster_score is None:
+        return JSONResponse(status_code=400,
+                            content={"error": "You Have to select at least 4 tickers."})
+    
+    return {
+        "cluster_score": cluster_score
+    }

@@ -1,8 +1,6 @@
 import numpy as np
 
-import kmeans_module
-
-
+import clustering.kmeans_module
 
 # 클러스터 분포 기반 점수화
 def diversification_score_cluster(df, selected_tickers, weights, n_clusters=4):
@@ -79,14 +77,15 @@ def diversification_score_mixed(
     return final_score
 
 
-result_df = kmeans_module.k_means()
+if __name__ == "__main__":
+    result_df = clustering.kmeans_module.k_means()
 
-# 임의로 종목 선택(사용자 선택 종목)
-selected_tickers = ['AAON', 'ZEOWW', 'AAA', 'ZURA']
+    # 임의로 종목 선택(사용자 선택 종목)
+    selected_tickers = ['AAON', 'ZEOWW', 'AAA', 'ZURA']
 
-# 임의로 투자 비중 설정(사용자 종목별 지정 투자 비율)
-weights = {'AAON':0.2, 'ZEOWW':0.4, 'AAA':0.2, 'ZURA':0.2}
+    # 임의로 투자 비중 설정(사용자 종목별 지정 투자 비율)
+    weights = {'AAON':0.2, 'ZEOWW':0.4, 'AAA':0.2, 'ZURA':0.2}
 
-score = diversification_score_mixed(
-    result_df, selected_tickers, weights, n_clusters=4, alpha=0.5)
-print("분산 투자 점수:", round(score, 3))
+    score = diversification_score_mixed(
+        result_df, selected_tickers, weights, n_clusters=4, alpha=0.5)
+    print("분산 투자 점수:", round(score, 3))
