@@ -4,8 +4,9 @@ from models.schemas import TickerList
 from clustering.kmeans_module import *
 import matplotlib
 
-from core.db import get_pretrained_data, get_hull_list, get_tickers_by_symbol
+from core.db import get_pretrained_data, get_hull_list, get_tickers_by_symbol, get_pretrained_sectors
 import clustering.recommend
+import clustering.sector_visualization
 
 matplotlib.use('Agg')
 router = APIRouter()
@@ -42,3 +43,15 @@ def recommend(data: TickerList):
         return JSONResponse(status_code=404,
                             content={"error": "No recommendations found."})
     return [item for symbol, item in res.items()][:50]
+
+@router.get("/sectors")
+def sector_analyze():
+    sectors_anlyze = get_pretrained_sectors()
+    if sectors_anlyze is None or sectors_anlyze.empty:
+        return JSONResponse(status_code=404,
+                            content={"error": "No sector analysis found."})
+    res = {
+        "sectors": sectors_anlyze.to_dict(orient="records")
+    }
+    return res
+
