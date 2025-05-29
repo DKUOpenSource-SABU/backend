@@ -52,7 +52,8 @@ def recommend(tickers):
     return recommended_tickers
 
 
-# 사용자가 선택했다고 가정(예시 데이터)
-selected_ticker = ['NUWE', 'CCM', 'DISTW', 'ALLR', 'QSIAW']
-
-recommend(selected_ticker)
+if __name__ == "__main__":
+    # 사용자가 선택했다고 가정(예시 데이터)
+    selected_ticker = ['NUWE', 'CCM', 'DISTW', 'ALLR', 'QSIAW']
+    # 추천 종목 출력
+    recommend(selected_ticker)
