@@ -10,6 +10,7 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
 
+
 # 클러스터링 진행 중 발생하는 numpy 경고 무시
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
@@ -156,9 +157,15 @@ def find_outlier(df):
     clf.fit(df.drop(columns=['ticker']))
     df['outlier'] = clf.predict(df.drop(columns=['ticker']))
     
+    # 정상 데이터
     normal_df = df[df['outlier'] == 1].copy().drop(columns=['outlier'])
     normal_df = normal_df.reset_index(drop=True)
-    return normal_df
+
+    # 이상치 데이터
+    outlier_df = df.loc[df['outlier'] == -1].drop(columns=['outlier'])
+    outlier_df = outlier_df.reset_index(drop=True)
+    
+    return normal_df, outlier_df
 
 
 def optimization_k(df):
@@ -196,9 +203,9 @@ def k_means(tickers=None):
     filtered_df_list = removed_stocks(df_list, end_date)
     trimmed_list = same_period(filtered_df_list, start_date, end_date)
     features_df = make_feature_df(trimmed_list)
-    df = find_outlier(features_df)
+    df, outlier_df = find_outlier(features_df)
 
-    # 표준화
+    # 스케일링
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(df.drop(columns=['ticker']))
 
@@ -207,13 +214,28 @@ def k_means(tickers=None):
     kmeans = KMeans(n_clusters=k, random_state=42)
     clusters = kmeans.fit_predict(X_scaled)
     df.loc[:, 'cluster'] = clusters
-    
+
+    # 2차원 축소
     pca = PCA(n_components=2)
     X_pca = pca.fit_transform(X_scaled)
     df['PC1'] = X_pca[:, 0]
     df['PC2'] = X_pca[:, 1]
 
-    result_df = df[['ticker', 'PC1', 'PC2', 'cluster']]
+    # 이상치 데이터 스케일링
+    outlier_scaled = scaler.transform(outlier_df.drop(columns=['ticker']))
+
+    # 이상치 데이터 클러스터 -1로 표기 
+    outlier_df.loc[:, 'cluster'] = -1
+
+    # 이상치 데이터 2차원 축소
+    outlier_pca = pca.transform(outlier_scaled)
+    outlier_df['PC1'] = outlier_pca[:, 0]
+    outlier_df['PC2'] = outlier_pca[:, 1]
+
+    # 정상 데이터, 이상치 데이터 결합
+    combined_df = pd.concat([df, outlier_df], axis=0)
+    result_df = combined_df[['ticker', 'PC1', 'PC2', 'cluster']]
+
     return result_df
 
 
