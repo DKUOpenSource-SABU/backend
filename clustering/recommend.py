@@ -1,42 +1,55 @@
 import numpy as np
 from sklearn.metrics.pairwise import euclidean_distances
 
-import clustering.kmeans_module
-import core.db
+from kmeans_module import *
+
+
+
+def make_df():
+    df_list = read_csv_files_year_filter()
+    start_date, end_date = find_shortest_period(df_list)
+    filtered_df_list = removed_stocks(df_list, end_date)
+    trimmed_list = same_period(filtered_df_list, start_date, end_date)
+    features_df = make_feature_df(trimmed_list)
+    df, outlier_df = find_outlier(features_df)
+
+    return df 
+
 
 def recommend(tickers):
-    result_df = core.db.get_pretrained_data()
-    pc_cols = ['PC1', 'PC2']
+    df = make_df()
 
-    # 선택한 종목의 행만 추출
-    selected_rows = result_df[result_df['ticker'].isin(tickers)].dropna(subset=pc_cols)
-    if selected_rows.empty:
-        print("No selected rows found for the given tickers.")
-        return None
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(df.drop(columns=['ticker']))
 
-    # 선택한 종목의 PC1, PC2를 이용하여 평균 지점 계산
-    center_point = selected_rows[pc_cols].mean(axis=0) \
-                                        .values.reshape(1, -1)
+    # 선택 종목 추출 및 평균 feature 계산
+    selected_ticker = tickers
+    selected_rows = df[df['ticker'].isin(selected_ticker)]
+    selected_scaled = scaler.transform(selected_rows.drop(columns=['ticker']))
+    center_point = selected_scaled.mean(axis=0).reshape(1, -1)
 
-    # 전체 종목의 PC1, PC2 좌표
-    all_points = result_df[pc_cols].values
-    print("center_point.shape:", center_point)
-    print("all_points.shape:", all_points.shape)
+    # 전체 종목과 중심점 간 거리 계산
+    distances = euclidean_distances(center_point, X_scaled).flatten()
 
-    # 중심점과 전체 종목 간 거리 계산
-    distances = euclidean_distances(center_point, all_points).flatten()
-
-    # 선택 종목의 인덱스
-    selected_indices = result_df.index[result_df['ticker'].isin(tickers)].tolist()
-
-    # 선택 종목은 추천 대상에서 제외
+    # 선택 종목은 추천에서 제외
+    selected_indices = df.index[df['ticker'].isin(selected_ticker)].tolist()
     distances[selected_indices] = -np.inf
 
-    # 거리가 큰 순서대로 상위 5개 종목 인덱스 추출
-    top5_indices = np.argpartition(distances, -5)[-5:]
-    top5_indices = top5_indices[np.argsort(distances[top5_indices])[::-1]]
+    # 가장 먼 상위 5개 종목 추천
+    valid_mask = distances != -np.inf
+    valid_distances = distances[valid_mask]
+    valid_indices = np.where(valid_mask)[0]
+    # 상위 5개 종목 인덱스 추출
+    top5_valid_indices = np.argpartition(valid_distances, -5)[-5:]
+    top5_valid_indices = top5_valid_indices[np.argsort(
+        valid_distances[top5_valid_indices])[::-1]]
+    top5_indices_fixed = valid_indices[top5_valid_indices]
 
-    return result_df.iloc[top5_indices]
+    # 인덱스에 해당하는 티커 추출
+    recommended_stocks = df.iloc[top5_indices_fixed]
+    recommended_tickers = recommended_stocks['ticker'].tolist()
+
+    return recommended_tickers
 
 
 if __name__ == "__main__":
