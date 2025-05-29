@@ -89,5 +89,16 @@ async def get_ticker_news(ticker: str):
     if data is None:
         return {"error": "Ticker not found"}
     for item in data:
-        item["semantic"] = finbert.semantic_analysis(item["title"])[0]["label"]
-    return data
+        item["sentiment"] = finbert.semantic_analysis(item["title"])[0]["label"]
+    count_positive = sum(1 for item in data if item["sentiment"] == "positive")
+    count_negative = sum(1 for item in data if item["sentiment"] == "negative")
+    count_neutral = sum(1 for item in data if item["sentiment"] == "neutral")
+    res = {
+        "results": data,
+        "sentiment_counts": {
+            "positive": count_positive,
+            "negative": count_negative,
+            "neutral": count_neutral
+        }
+    }
+    return res
