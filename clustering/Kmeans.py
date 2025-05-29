@@ -1,21 +1,21 @@
 import os
 import glob
-import warnings
 
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.ensemble import IsolationForest
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import silhouette_score
+from sklearn.metrics import davies_bouldin_score
+from sklearn.metrics import calinski_harabasz_score
 
 
 
-# 클러스터링 진행 중 발생하는 numpy 경고 무시
-warnings.filterwarnings("ignore", category=RuntimeWarning)
-
-def read_csv_files_year_filter(tickers=None):
-    base_path = os.path.abspath('./data/stock/')
+def read_csv_files(tickers=None):
+    base_path = os.path.abspath('../data/stock/')
     all_files = glob.glob(os.path.join(base_path, "*.csv"))
     
     # tickers가 주어지면 해당 ticker만 필터링
@@ -157,15 +157,9 @@ def find_outlier(df):
     clf.fit(df.drop(columns=['ticker']))
     df['outlier'] = clf.predict(df.drop(columns=['ticker']))
     
-    # 정상 데이터
     normal_df = df[df['outlier'] == 1].copy().drop(columns=['outlier'])
     normal_df = normal_df.reset_index(drop=True)
-
-    # 이상치 데이터
-    outlier_df = df.loc[df['outlier'] == -1].drop(columns=['outlier'])
-    outlier_df = outlier_df.reset_index(drop=True)
-    
-    return normal_df, outlier_df
+    return normal_df
 
 
 def optimization_k(df):
@@ -176,6 +170,11 @@ def optimization_k(df):
         kmeans.fit(df)
         inertias.append(kmeans.inertia_)
     
+    plt.plot(range(1, 11), inertias, marker='o')
+    plt.title('Elbow Method')
+    plt.xlabel('Number of clusters (K)')
+    plt.ylabel('Inertia (Within-cluster sum of squares)')
+    plt.show()
 
     # 엘보우 포인트 자동 탐지 함수
     def find_elbow_point(x, y):
@@ -188,13 +187,14 @@ def optimization_k(df):
             distances.append(numerator / denominator)
         return np.argmax(distances) + 1  # +1은 K가 1부터 시작할 때
     
-
     optimal_k = find_elbow_point(np.array(list(range(1, 11))), np.array(inertias))
+    print(f"엘보우 포인트(최적 K): {optimal_k}")
+
     return optimal_k
 
 
 def k_means(tickers=None):
-    df_list = read_csv_files_year_filter(tickers)
+    df_list = read_csv_files(tickers)
     if not df_list:
         print("선택한 티커에 해당하는 데이터가 없습니다.")
         return None
@@ -203,9 +203,9 @@ def k_means(tickers=None):
     filtered_df_list = removed_stocks(df_list, end_date)
     trimmed_list = same_period(filtered_df_list, start_date, end_date)
     features_df = make_feature_df(trimmed_list)
-    df, outlier_df = find_outlier(features_df)
+    df = find_outlier(features_df)
 
-    # 스케일링
+    # 표준화
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(df.drop(columns=['ticker']))
 
@@ -214,31 +214,27 @@ def k_means(tickers=None):
     kmeans = KMeans(n_clusters=k, random_state=42)
     clusters = kmeans.fit_predict(X_scaled)
     df.loc[:, 'cluster'] = clusters
-
-    # 2차원 축소
+    
+    # 2차원 시각화
     pca = PCA(n_components=2)
     X_pca = pca.fit_transform(X_scaled)
     df['PC1'] = X_pca[:, 0]
     df['PC2'] = X_pca[:, 1]
 
-    # 이상치 데이터 스케일링
-    outlier_scaled = scaler.transform(outlier_df.drop(columns=['ticker']))
+    plt.figure(figsize=(8,6))
+    plt.scatter(X_pca[:, 0], X_pca[:, 1], c=clusters, cmap='tab10')
+    plt.title('K-Means Clustering of Stocks (PCA Visualization)')
+    plt.xlabel("PC1")
+    plt.ylabel("PC2")
+    plt.show()
 
-    # 학습된 클러스터링 모델에 이상치 데이터 넣어 분류
-    outlier_clusters = kmeans.predict(outlier_scaled)
-    outlier_df.loc[:, 'cluster'] = outlier_clusters
+    # 클러스터링 평가 지표
+    print("실루엣 계수:", silhouette_score(X_scaled, clusters)) # 실루엣 계수
+    print("Davies-Bouldin Index:", davies_bouldin_score(X_scaled, clusters)) # Davies-Bouldin Index
+    print("Calinski-Harabasz Index:", calinski_harabasz_score(X_scaled, clusters))  # Calinski-Harabasz Index
 
-    # 이상치 데이터 2차원 축소
-    outlier_pca = pca.transform(outlier_scaled)
-    outlier_df['PC1'] = outlier_pca[:, 0]
-    outlier_df['PC2'] = outlier_pca[:, 1]
-
-    # 정상 데이터, 이상치 데이터 결합
-    combined_df = pd.concat([df, outlier_df], axis=0)
-    result_df = combined_df[['ticker', 'PC1', 'PC2', 'cluster']]
-
+    result_df = df[['ticker', 'PC1', 'PC2', 'cluster']]
     return result_df
 
 
-if __name__ == "__main__":
-    k_means()
+k_means()
