@@ -2,6 +2,7 @@ def calculate_metrics(raw_result, strategy, rebalance, initial_cash, weights):
     analyzers = raw_result.get("analyzers", {})
     prices = raw_result.get("prices", {})
     portfolio_values = raw_result.get("portfolio_value", [])
+    drawdown_series = raw_result.get("drawdown_series", [])
     dates = raw_result.get("dates", [])
 
     returns = analyzers.get("returns", {})
@@ -19,7 +20,7 @@ def calculate_metrics(raw_result, strategy, rebalance, initial_cash, weights):
     ]
 
     drawdown_series = [
-        {"date": d, "drawdown": dd} for d, dd in zip(dates, drawdown.get("drawdown_series", []))
+        {"date": d, "drawdown": dd} for d, dd in zip(dates, drawdown_series)
     ]
 
     annual_returns = {

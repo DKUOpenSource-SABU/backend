@@ -1,7 +1,7 @@
 import pandas as pd
 from pathlib import Path
 
-DATA_PATH = Path("__file__").resolve().parent.parent / "stock"
+DATA_PATH = Path("./data/stock").resolve()
 
 def load_data(tickers: list, start_date: str, end_date: str) -> dict:
     data = {}
@@ -31,8 +31,5 @@ def load_data(tickers: list, start_date: str, end_date: str) -> dict:
 
         data[ticker] = df
 
-        print(f"✅ {ticker}:")
-        print(df.head())
-        print(df.tail())
 
     return data
