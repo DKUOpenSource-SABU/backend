@@ -5,3 +5,10 @@ from typing import List
 # 작성자 : 김태형
 class TickerList(BaseModel):
     tickers: List[str]
+
+class TickerInfo(BaseModel):
+    ticker: str
+    ratio: float
+
+class RatioList(BaseModel):
+    ratios: List[TickerInfo]
