@@ -1,9 +1,7 @@
 import numpy as np
 from sklearn.metrics.pairwise import euclidean_distances
 
-from kmeans_module import *
-
-
+from clustering.kmeans_module import *
 
 def make_df():
     df_list = read_csv_files_year_filter()
