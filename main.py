@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import search, cluster
+from routers import search, cluster, backtest
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Stock Clustering API")
@@ -23,3 +23,4 @@ app.add_middleware(
 # 라우터 등록
 app.include_router(search.router, prefix="/search")
 app.include_router(cluster.router, prefix="/cluster")
+app.include_router(backtest.router, prefix="/backtest")

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Body
 from typing import List, Optional
 import api.tiingo as tiingo
+import api.finBERT as finbert
 
 from core.db import get_all_tickers
 
@@ -87,4 +88,17 @@ async def get_ticker_news(ticker: str):
     data = tiingo.get_ticker_news(ticker)
     if data is None:
         return {"error": "Ticker not found"}
-    return data
+    for item in data:
+        item["sentiment"] = finbert.semantic_analysis(item["title"])[0]["label"]
+    count_positive = sum(1 for item in data if item["sentiment"] == "positive")
+    count_negative = sum(1 for item in data if item["sentiment"] == "negative")
+    count_neutral = sum(1 for item in data if item["sentiment"] == "neutral")
+    res = {
+        "results": data,
+        "sentiment_counts": {
+            "positive": count_positive,
+            "negative": count_negative,
+            "neutral": count_neutral
+        }
+    }
+    return res

@@ -1,9 +1,9 @@
-from app.strategies.buy_and_hold import BuyAndHold
-from app.strategies.sma_cross import SmaCross
-from app.strategies.rsi import RSI
-from app.services.data_provider import load_data
-from app.utils.calculate_metrics import calculate_metrics
-from app.models.request_models import BacktestRequest
+from buy_and_hold import BuyAndHold
+from sma_cross import SmaCross
+from rsi import RSI
+from data_provider import load_data
+from utils import calculate_metrics
+from models.request_models import BacktestRequest
 from datetime import datetime
 STRATEGY_MIN_DAYS = {
     "RSI": 14,

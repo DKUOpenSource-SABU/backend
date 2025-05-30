@@ -107,7 +107,9 @@ for cluster in pretrained_data["cluster"].unique().tolist():
         "cluster": int(cluster),
         "hull_coords" : hull_coords,
         })
-    
+
+max_strategy = list()
+
 
 # ------- DB 접근 Getter ------
 # 모든 티커 정보 및 클러스터 정보를 반환하는 함수
@@ -153,3 +155,27 @@ def get_tickers_by_symbol(symbols):
 def get_pretrained_sectors():
     global pretrained_sectors
     return pretrained_sectors
+
+def get_max_strategy():
+    global max_strategy
+    return max_strategy
+
+def update_max_strategy(max_total_return, strategy):
+    global max_strategy
+    if len(max_strategy) < 5:
+        max_strategy.append({
+            "total_return": max_total_return,
+            "strategy": strategy
+        })
+        return
+    for item in max_strategy:
+        if item["total_return"] < max_total_return:
+            if len(max_strategy) >= 5:
+                min_item = min(max_strategy, key=lambda x: x["total_return"])
+                max_strategy.remove(min_item)
+            max_strategy.append({
+                "total_return": max_total_return,
+                "strategy": strategy
+            })
+            return 
+    return 
