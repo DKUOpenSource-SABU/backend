@@ -10,6 +10,7 @@ class BuyAndHoldStrategy(bt.Strategy):
         self.month_peak = {}
         self.last_month = None
 
+
     def next(self):
         current_date = self.datas[0].datetime.date(0)
         current_month = current_date.strftime("%Y-%m")
@@ -19,7 +20,7 @@ class BuyAndHoldStrategy(bt.Strategy):
         if current_month != self.last_month:
             if self.last_month is not None:
                 peak = self.month_peak.get(self.last_month, value)
-                drawdown = (peak - value) / peak * 100 if peak > 0 else 0.0
+                drawdown = (value - peak) / peak * 100 if peak > 0 else 0.0
                 self.monthly_drawdown[self.last_month] = round(drawdown, 2)
 
             self.monthly_values[current_month] = value
@@ -62,7 +63,7 @@ class BuyAndHoldStrategy(bt.Strategy):
         if self.last_month and self.last_month not in self.monthly_drawdown:
             value = self.broker.get_value()
             peak = self.month_peak.get(self.last_month, value)
-            drawdown = (peak - value) / peak * 100 if peak > 0 else 0.0
+            drawdown = (value - peak) / peak * 100 if peak > 0 else 0.0
             self.monthly_drawdown[self.last_month] = round(drawdown, 2)
 
 
@@ -92,7 +93,7 @@ class BuyAndHold:
             cerebro.addstrategy(BuyAndHoldStrategy, rebalance_mode=mode, weights=self.weights)
 
             cerebro.addanalyzer(bt.analyzers.Returns, _name="returns")
-            cerebro.addanalyzer(bt.analyzers.TimeReturn, _name="timereturn", timeframe=bt.TimeFrame.Years)
+            cerebro.addanalyzer(bt.analyzers.TimeReturn, _name="timereturn", timeframe=bt.TimeFrame.Days, fund=True)
             cerebro.addanalyzer(bt.analyzers.DrawDown, _name="drawdown")
             cerebro.addanalyzer(bt.analyzers.AnnualReturn, _name="annual")
 
@@ -113,7 +114,7 @@ class BuyAndHold:
             }
 
             results.append({
-                "strategy": "buy-and-hold",
+                "strategy": "Buy and Hold",
                 "rebalance": mode,
                 "portfolio_value": portfolio_value,
                 "drawdown_series": drawdown_series,

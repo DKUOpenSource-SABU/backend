@@ -15,6 +15,7 @@ class RsiStrategy(bt.Strategy):
         self.month_peak = {}
         self.last_month = None
 
+
     def next(self):
         dt = self.datas[0].datetime.date(0)
         current_month = self.data.datetime.date().strftime('%Y-%m')
@@ -23,7 +24,7 @@ class RsiStrategy(bt.Strategy):
         if current_month != self.last_month:
             if self.last_month is not None:
                 peak = self.month_peak.get(self.last_month, value)
-                drawdown = (peak - value) / peak * 100 if peak > 0 else 0.0
+                drawdown = (value - peak) / peak * 100 if peak > 0 else 0.0
                 self.monthly_drawdown[self.last_month] = round(drawdown, 2)
 
             self.monthly_values[current_month] = value
@@ -54,7 +55,7 @@ class RsiStrategy(bt.Strategy):
         if self.last_month and self.last_month not in self.monthly_drawdown:
             value = self.broker.get_value()
             peak = self.month_peak.get(self.last_month, value)
-            drawdown = (peak - value) / peak * 100 if peak > 0 else 0.0
+            drawdown = (value - peak) / peak * 100 if peak > 0 else 0.0
             self.monthly_drawdown[self.last_month] = round(drawdown, 2)
 
 
@@ -70,7 +71,7 @@ class RsiStrategy(bt.Strategy):
                 self.close(data=data)
 
 
-class Rsi:
+class RSI:
     def __init__(self, data, weights, initial_cash):
         self.data = data
         self.weights = weights
@@ -119,7 +120,7 @@ class Rsi:
             }
 
             results.append({
-                "strategy": "rsi",
+                "strategy": "RSI",
                 "rebalance": mode,
                 "portfolio_value": portfolio_value,
                 "drawdown_series": drawdown_series,
