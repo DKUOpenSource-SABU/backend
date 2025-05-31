@@ -14,6 +14,8 @@ from sklearn.preprocessing import StandardScaler
 # 클러스터링 진행 중 발생하는 numpy 경고 무시
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
+# 최소 1년치의 데이터를 가지고 있는 주식 정보 불러오기
+# 작성자 : 김동혁
 def read_csv_files_year_filter(tickers=None):
     base_path = os.path.abspath('./data/stock/')
     all_files = glob.glob(os.path.join(base_path, "*.csv"))
@@ -57,6 +59,8 @@ def read_csv_files_year_filter(tickers=None):
     return df_list
 
 
+# 모든 종목이 공통으로 가지는 최소 기간 탐색
+# 작성자 : 김동혁
 def find_shortest_period(df_list):
     min_dates = []
     max_dates = []
@@ -71,6 +75,8 @@ def find_shortest_period(df_list):
     return start_date, end_date
 
 
+# 상장폐지 종목 제거 (마지막 데이터가 최신 데이터가 아닌 과거 데이터)
+# 작성자 : 김동혁
 def removed_stocks(df_list, end_date):
     # end_date가 존재하지 않는(상장폐지된) 종목 제거
     filtered_df_list = []
@@ -84,6 +90,8 @@ def removed_stocks(df_list, end_date):
     return filtered_df_list
 
 
+# 탐색한 최소 기간의 데이터만 추출
+# 작성자 : 김동혁
 def same_period(df_list, start_date, end_date):
     trimmed_list = []
 
@@ -94,7 +102,10 @@ def same_period(df_list, start_date, end_date):
     return trimmed_list
 
 
+# 가격 정보를 이용한 지표 생성 및 추출
+# 작성자 : 김동혁
 def extract_features(df):
+    # RSI 계산
     def calculate_rsi(series, period=14):
         delta = series.diff()  # 하루 전 대비 가격 변화량
         # 상승폭 평균(오른 날은 양수, 내린 날은 0으로 처리)
@@ -104,8 +115,9 @@ def extract_features(df):
         rs = gain / loss  # 상대 강도
         rsi = 100 - (100 / (1 + rs))  # RSI 공식
         return rsi
+    
 
-
+    # MDD 계산
     def calculate_mdd(series):
         roll_max = series.cummax()  # 누적 최고가 시계열
         drawdown = (series - roll_max) / roll_max
@@ -113,6 +125,7 @@ def extract_features(df):
         return mdd
 
 
+    # 6개월 지표 계산 (이동평균, 수익률, 변동성)
     def calc_6m_features(df):
         df_6m = df.tail(126)
         ma_6m = df_6m['close'].mean()
@@ -130,12 +143,13 @@ def extract_features(df):
     rsi = calculate_rsi(df['close'], 14).iloc[-1]
     mdd = calculate_mdd(df['close'])
     avg_vol = df['volume'].mean()  # 평균 거래량
-
-    ma_6m, ret_6m, vola_6m = calc_6m_features(df)  # 최근 6개월 이동평균, 수익률, 변동성
+    ma_6m, ret_6m, vola_6m = calc_6m_features(df)
     
     return [ticker, ma60, ma_6m, ret, ret_6m, vola, vola_6m, rsi, mdd, avg_vol]
 
 
+# 추출한 지표를 가지고 데이터프레임 구성 및 결측치 제거
+# 작성자 : 김동혁
 def make_feature_df(df_list):
     feature_names = [
         'ticker', 'MA_60', 'MA_6M', 'Total_Return', 'Return_6M', 
@@ -152,7 +166,10 @@ def make_feature_df(df_list):
     return features_df
 
 
+# Isolation Forest을 이용하여 이상치 탐색
+# 작성자 : 김동혁
 def find_outlier(df):
+    # 각 데이터 포인트가 여러 개의 랜덤 결정 트리에서 고립되는 데 필요한 경로 길이(depth)를 기준으로 이상치 판단
     clf = IsolationForest(contamination=0.05, random_state=42)  # 전체의 5%를 이상치로 간주
     clf.fit(df.drop(columns=['ticker']))
     df['outlier'] = clf.predict(df.drop(columns=['ticker']))
@@ -160,7 +177,6 @@ def find_outlier(df):
     # 정상 데이터
     normal_df = df[df['outlier'] == 1].copy().drop(columns=['outlier'])
     normal_df = normal_df.reset_index(drop=True)
-
     # 이상치 데이터
     outlier_df = df.loc[df['outlier'] == -1].drop(columns=['outlier'])
     outlier_df = outlier_df.reset_index(drop=True)
@@ -168,9 +184,10 @@ def find_outlier(df):
     return normal_df, outlier_df
 
 
+# 엘보우 기법을 이용하여 K-Means 클러스터링에 필요한 최적의 k 탐색
+# 작성자 : 김동혁
 def optimization_k(df):
     inertias = []  # SSE
-    
     for k in range(1, 11):
         kmeans = KMeans(n_clusters=k, random_state=42)
         kmeans.fit(df)
@@ -193,6 +210,8 @@ def optimization_k(df):
     return optimal_k
 
 
+# K-Means 클러스터링 및 시각화에 필요한 정보 2차원 축소
+# 작성자 : 김동혁
 def k_means(tickers=None):
     df_list = read_csv_files_year_filter(tickers)
     if not df_list:
@@ -203,23 +222,25 @@ def k_means(tickers=None):
     filtered_df_list = removed_stocks(df_list, end_date)
     trimmed_list = same_period(filtered_df_list, start_date, end_date)
     features_df = make_feature_df(trimmed_list)
-    df, outlier_df = find_outlier(features_df)
+    normal_df, outlier_df = find_outlier(features_df)
 
     # 스케일링
     scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(df.drop(columns=['ticker']))
+    X_scaled = scaler.fit_transform(normal_df.drop(columns=['ticker']))
 
     # K-Means 클러스터링
     k = optimization_k(X_scaled)
     kmeans = KMeans(n_clusters=k, random_state=42)
     clusters = kmeans.fit_predict(X_scaled)
-    df.loc[:, 'cluster'] = clusters
+    normal_df.loc[:, 'cluster'] = clusters
 
-    # 2차원 축소
+    # 정상치 데이터 2차원 축소
     pca = PCA(n_components=2)
     X_pca = pca.fit_transform(X_scaled)
-    df['PC1'] = X_pca[:, 0]
-    df['PC2'] = X_pca[:, 1]
+    normal_df['PC1'] = X_pca[:, 0]
+    normal_df['PC2'] = X_pca[:, 1]
+    # 클러스터별 PC1, PC2 평균값
+    pca_means = normal_df.groupby('cluster')[['PC1', 'PC2']].mean()
 
     # 이상치 데이터 스케일링
     outlier_scaled = scaler.transform(outlier_df.drop(columns=['ticker']))
@@ -228,13 +249,12 @@ def k_means(tickers=None):
     outlier_clusters = kmeans.predict(outlier_scaled)
     outlier_df.loc[:, 'cluster'] = outlier_clusters
 
-    # 이상치 데이터 2차원 축소
-    outlier_pca = pca.transform(outlier_scaled)
-    outlier_df['PC1'] = outlier_pca[:, 0]
-    outlier_df['PC2'] = outlier_pca[:, 1]
+    # 이상치 데이터 2차원 축소값 정상치 데이터의 평균값으로 대체
+    outlier_df['PC1'] = outlier_df['cluster'].map(pca_means['PC1'])
+    outlier_df['PC2'] = outlier_df['cluster'].map(pca_means['PC2'])
 
     # 정상 데이터, 이상치 데이터 결합
-    combined_df = pd.concat([df, outlier_df], axis=0)
+    combined_df = pd.concat([normal_df, outlier_df], axis=0)
     result_df = combined_df[['ticker', 'PC1', 'PC2', 'cluster']]
 
     return result_df
