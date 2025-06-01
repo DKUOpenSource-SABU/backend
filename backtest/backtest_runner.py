@@ -5,6 +5,9 @@ from data_provider import load_data
 from utils import calculate_metrics
 from models.request_models import BacktestRequest
 from datetime import datetime
+from core.db import update_max_strategy
+import copy
+
 STRATEGY_MIN_DAYS = {
     "RSI": 14,
     "SmaCross": 50,
@@ -40,6 +43,13 @@ def run_backtest(req: BacktestRequest):
                     weights=weights
                 )
                 results.append(metrics)
+                if metrics["total_return"] > max_total_return:
+                    max_total_return = max(max_total_return, metrics["total_return"])
+                    max_strategy = copy.deepcopy(metrics)
+                    max_strategy.pop("portfolio_growth", None)
+                    max_strategy.pop("drawdown_series", None)
+                    max_strategy.pop("annual_returns", None)
+                    update_max_strategy(max_total_return, max_strategy)
         except ValueError as e:
             results.append({
                 "strategy": StrategyClass.__name__,
