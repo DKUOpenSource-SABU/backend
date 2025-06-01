@@ -35,14 +35,17 @@ def cluster_analyze(pre: str, data: TickerList):
 # 작성자 : 김태형
 @router.post("/recommend")
 def recommend(data: TickerList):
+    if data is None or not isinstance(data, TickerList):
+        return JSONResponse(status_code=400,
+                            content={"error": "Invalid input data."})
     if data.tickers is None or len(data.tickers) < 0:
         return JSONResponse(status_code=204,
                             content={"empty": "No Recommendation."})
     top5_tickers = clustering.recommend.recommend(data.tickers)
-    if top5_tickers is None or top5_tickers.empty:
+    if top5_tickers is None:
         return JSONResponse(status_code=404,
                             content={"error": "No recommendations found."})
-    res = get_tickers_by_symbol(top5_tickers["ticker"].tolist())
+    res = get_tickers_by_symbol(top5_tickers)
     if not res:
         return JSONResponse(status_code=404,
                             content={"error": "No recommendations found."})

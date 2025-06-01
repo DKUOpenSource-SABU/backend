@@ -34,6 +34,7 @@ def run_backtest(req: BacktestRequest):
                     f"{StrategyClass.__name__} 전략은 최소 {required_days}일 이상의 데이터가 필요합니다. 현재 기간: {date_diff}일")
             strategy = StrategyClass(data, weights, req.initial_cash)
             raw_results = strategy.run()
+            max_total_return = float("-inf")
             for raw_result in raw_results:
                 metrics = calculate_metrics(
                     raw_result,
