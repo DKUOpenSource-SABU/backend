@@ -11,7 +11,7 @@ const BASE_URL = 'http://localhost:8000'; // 실제 주소로 변경
 export default function () {
   group("✅ 유효한 티커로 추천 요청", () => {
     const payload = JSON.stringify({
-      tickers: ["AAPL", "MSFT"]
+      tickers: ["AAPL", "MSFT", "GOOGL", "TSLA"]
     });
 
     const res = http.post(`${BASE_URL}/cluster/recommend`, payload, {
@@ -28,6 +28,20 @@ export default function () {
           return false;
         }
       },
+    });
+  });
+
+  group("🚫 4개 미만 티커 요청", () => {
+    const payload = JSON.stringify({
+      tickers: ["AAPL", "MSFT"]
+    });
+
+    const res = http.post(`${BASE_URL}/cluster/recommend`, payload, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    check(res, {
+      'Status is 400': (r) => r.status === 400
     });
   });
 

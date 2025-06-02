@@ -30,8 +30,7 @@ export default function () {
       '결과에 수익률 포함': (r) => {
         try {
           const data = JSON.parse(r.body);
-          console.log(data);
-          return data.total_return !== undefined || data.max_drawdown !== undefined;
+          return data.results[0].total_return !== undefined || data.results[0].max_drawdown !== undefined;
         } catch {
           return false;
         }

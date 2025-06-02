@@ -41,7 +41,14 @@ def recommend(data: TickerList):
     if data.tickers is None or len(data.tickers) < 0:
         return JSONResponse(status_code=204,
                             content={"empty": "No Recommendation."})
-    top5_tickers = clustering.recommend.recommend(data.tickers)
+    if len(data.tickers) < 4:
+        return JSONResponse(status_code=400,
+                            content={"error": "You have to select at least 4 tickers."})
+    try:
+        top5_tickers = clustering.recommend.recommend(data.tickers)
+    except Exception as e:
+        return JSONResponse(status_code=500,
+                            content={"error": str(e)})
     if top5_tickers is None:
         return JSONResponse(status_code=404,
                             content={"error": "No recommendations found."})

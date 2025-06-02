@@ -40,11 +40,14 @@ export default function () {
   });
 
   group("🚫 존재하지 않는 클러스터 (예: [5, 6])", () => {
-    const invalidClusters = JSON.stringify([5, 6]);
+    const invalidClusters = JSON.stringify({ clusters: [5, 6] });
 
     const res = http.post(`${BASE_URL}/search/ticker?query=MSFT`, invalidClusters, {
       headers: { 'Content-Type': 'application/json' },
     });
+
+    console.log(`Response body: ${res.body}`); // 디버깅용 로그
+    console.log(`Response body: ${res.body}`); // 디버깅용 로그
 
     check(res, {
       'Status is 200 (응답은 OK)': (r) => r.status === 200,
