@@ -11,19 +11,32 @@ import core.db
 # 작성자 : 김동혁
 def diversification_score_cluster(df, selected_tickers, weights, n_clusters=4):
     '''
-    선택된 종목들이 4개 클러스터에 얼마나 고르게 분포되어 있는지 평가
+    선택된 종목들이 클러스터에 얼마나 고르게 분포되어 있는지 평가
     여러 클러스터에 고르게 분포될수록 분산 투자가 잘 된 것으로 간주
     종목별 비중 가중치 부여
     '''
-    if len(selected_tickers) < 4:
-        print("최소 4개 이상의 종목을 담아야 분산 투자 점수가 산정됩니다.")
+    # 선택 종목이 2개 미만이면 점수 산정 불가
+    if len(selected_tickers) < 2:
+        print("최소 2개 이상의 종목을 담아야 분산 투자 점수가 산정됩니다.")
         return None
-    # 선택 종목에 해당하는 클러스터 정보 추출
+
+    # 선택 종목 추출
     selected = df[df['ticker'].isin(selected_tickers)].copy()
+    # 종목별 투자 비중(가중치) 할당
     selected['weight'] = [weights[t] for t in selected['ticker']]
-    cluster_weights = selected.groupby('cluster')['weight'].sum().reindex(
-        range(n_clusters), fill_value=0)
-    score = 1 - np.sum(cluster_weights ** 2)
+
+    # 클러스터별 투자 비중의 합(선택되지 않은 클러스터는 0으로 채워짐)
+    cluster_weights = selected.groupby('cluster')['weight'].\
+        sum().reindex(range(n_clusters), fill_value=0)
+    
+    # 균등성 점수 (정규화 전): 각 클러스터별 비중의 제곱합을 1에서 뺀 값
+    raw_score = 1 - np.sum(cluster_weights ** 2)
+    # 이론적 최대 점수 (모든 클러스터에 균등 분포 시)
+    max_score = 1 - 1 / n_clusters if n_clusters > 1 else 0
+
+    # 최종 점수(0~1): 실제 점수를 최대 점수로 나눠 정규화
+    score = raw_score / max_score if max_score > 0 else 0
+    
     return score
 
 
@@ -136,4 +149,4 @@ if __name__ == "__main__":
 
     score = diversification_score_mixed(
         result_df, selected_tickers, weights, n_clusters=4, alpha=0.5)
-    print("분산 투자 점수:", round(score * 100, 3))
+    print("분산 투자 점수:", score)
