@@ -28,6 +28,9 @@ class StrategyResult(BaseModel):
     total_return: float
     cagr: float
     max_drawdown: float
+    start_date: str
+    end_date: str
+    date_diff: int
     portfolio_growth: List[PortfolioPoint]
     drawdown_series: List[DrawdownPoint]
     annual_returns: Dict[str, float]

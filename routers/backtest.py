@@ -27,7 +27,7 @@ async def backtest(req: BacktestRequest):
     try:
         res = run_backtest(req)
     except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail={"error": str(e)})
     return res
 
 @router.get("/leaderboard")

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-def calculate_metrics(raw_result, strategy, rebalance, initial_cash, weights):
+def calculate_metrics(raw_result, strategy, rebalance, initial_cash, weights, start_date=None, end_date=None, date_diff = None):
     analyzers = raw_result.get("analyzers", {})
     prices = raw_result.get("prices", {})
     portfolio_values = raw_result.get("portfolio_value", [])
@@ -69,7 +69,10 @@ def calculate_metrics(raw_result, strategy, rebalance, initial_cash, weights):
         "portfolio_growth": portfolio_growth,
         "drawdown_series": drawdown_series,
         "annual_returns": annual_returns,
-        "assets": assets
+        "assets": assets,
+        "start_date": start_date,
+        "end_date": end_date,
+        "date_diff": date_diff
     }
 
 def calculate_cagr(start_value, end_value, start_date_str, end_date_str, fmt="%Y-%m"):

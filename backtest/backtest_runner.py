@@ -40,10 +40,13 @@ def run_backtest(req: BacktestRequest):
                     strategy=raw_result["strategy"],
                     rebalance=raw_result["rebalance"],
                     initial_cash=req.initial_cash,
-                    weights=weights
+                    weights=weights,
+                    start_date=str(req.start_date),
+                    end_date=str(req.end_date),
+                    date_diff=date_diff
                 )
                 results.append(metrics)
-                if metrics["total_return"] > max_total_return:
+                if date_diff > 180 and metrics["total_return"] > max_total_return:
                     max_total_return = max(max_total_return, metrics["total_return"])
                     max_strategy = copy.deepcopy(metrics)
                     max_strategy.pop("portfolio_growth", None)
