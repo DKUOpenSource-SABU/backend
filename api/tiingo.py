@@ -58,15 +58,18 @@ def get_ticker_news(ticker):
 
 STOCK_DIR = './data/stock'
 
-
 def load_stock_csv(ticker: str):
     path = os.path.join(STOCK_DIR, f"{ticker}.csv")
     if not os.path.exists(path):
         raise FileNotFoundError(f"{ticker}.csv not found in ./stock")
 
-    df = pd.read_csv(path, parse_dates=['date'])
+    df = pd.read_csv(path)  # parse_dates 제거
+    if 'date' not in df.columns:
+        raise KeyError("CSV must contain 'date' column")
+
+    df['date'] = pd.to_datetime(df['date'], errors='raise')  # ✅ 명시적으로 변환
     df['close'] = df['adjClose']
-    df = df.sort_values('date')  # 날짜 순 정렬
+    df = df.sort_values('date')
     return df
 
 
