@@ -34,4 +34,4 @@ class StrategyResult(BaseModel):
     assets: List[AssetResult]
 
 class BacktestResponse(BaseModel):
-    results: List[StrategyResult]
+    results: List[StrategyResult] 
