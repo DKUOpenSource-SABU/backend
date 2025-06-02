@@ -1,5 +1,6 @@
 import backtrader as bt
 
+
 class SmaCrossStrategy(bt.Strategy):
     params = dict(fast=20, slow=50, rebalance_mode="none")
 
@@ -18,6 +19,7 @@ class SmaCrossStrategy(bt.Strategy):
         self.monthly_drawdown = {}
         self.month_peak = {}
 
+
     def next(self):
         dt = self.datas[0].datetime.date(0)
         current_month = dt.strftime('%Y-%m')
@@ -26,7 +28,7 @@ class SmaCrossStrategy(bt.Strategy):
         if current_month != self.last_month:
             if self.last_month is not None:
                 peak = self.month_peak.get(self.last_month, value)
-                drawdown = (peak - value) / peak * 100 if peak > 0 else 0.0
+                drawdown = (value - peak) / peak * 100 if peak > 0 else 0.0
                 self.monthly_drawdown[self.last_month] = round(drawdown, 2)
 
             self.monthly_values[current_month] = value
@@ -68,7 +70,7 @@ class SmaCrossStrategy(bt.Strategy):
         if self.last_month and self.last_month not in self.monthly_drawdown:
             value = self.broker.get_value()
             peak = self.month_peak.get(self.last_month, value)
-            drawdown = (peak - value) / peak * 100 if peak > 0 else 0.0
+            drawdown = (value - peak) / peak * 100 if peak > 0 else 0.0
             self.monthly_drawdown[self.last_month] = round(drawdown, 2)
 
 
@@ -121,7 +123,7 @@ class SmaCross:
             }
 
             results.append({
-                "strategy": "sma_cross",
+                "strategy": "Sma Cross",
                 "rebalance": mode,
                 "portfolio_value": portfolio_value,
                 "drawdown_series": drawdown_series,
