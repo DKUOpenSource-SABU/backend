@@ -34,7 +34,7 @@ def cluster_analyze(pre: str, data: TickerList):
 # 클러스터링 결과를 기반으로 추천 티커를 반환하는 API
 # 작성자 : 김태형
 @router.post("/recommend")
-def recommend(data: TickerList):
+async def recommend(data: TickerList):
     if data is None or not isinstance(data, TickerList):
         return JSONResponse(status_code=400,
                             content={"error": "Invalid input data."})
@@ -59,7 +59,7 @@ def recommend(data: TickerList):
     return [item for symbol, item in res.items()][:50]
 
 @router.get("/sectors")
-def sector_analyze():
+async def sector_analyze():
     sectors_anlyze = get_pretrained_sectors()
     if sectors_anlyze is None or sectors_anlyze.empty:
         return JSONResponse(status_code=404,

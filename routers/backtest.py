@@ -9,7 +9,7 @@ from fastapi import HTTPException
 router = APIRouter()
 
 @router.post("/", response_model=BacktestResponse)
-def backtest(req: BacktestRequest):
+async def backtest(req: BacktestRequest):
     if not req.portfolio or len(req.portfolio) < 2:
         raise HTTPException(status_code=400, detail="Portfolio must contain at least 2 assets.")
     if not req.start_date or not req.end_date:
@@ -31,5 +31,5 @@ def backtest(req: BacktestRequest):
     return res
 
 @router.get("/leaderboard")
-def leaderboard():
+async def leaderboard():
     return {"leaderboard": get_max_strategy()}
