@@ -15,6 +15,8 @@ router = APIRouter()
 @router.post("/ticker")
 async def search_ticker(query: str, 
                         clusters: Optional[List[int]] = Body(None, embed=True)):
+    if not query:
+        return {"results": []}
     all_tickers = get_all_tickers()
     query_upper = query.upper()
     if clusters:

@@ -1,8 +1,8 @@
-from buy_and_hold import BuyAndHold
-from sma_cross import SmaCross
-from rsi import RSI
-from data_provider import load_data
-from utils import calculate_metrics
+from backtest.buy_and_hold import BuyAndHold
+from backtest.sma_cross import SmaCross
+from backtest.rsi import RSI
+from backtest.data_provider import load_data
+from backtest.utils import calculate_metrics
 from models.request_models import BacktestRequest
 from datetime import datetime
 from core.db import update_max_strategy
@@ -30,20 +30,23 @@ def run_backtest(req: BacktestRequest):
         try:
             required_days = STRATEGY_MIN_DAYS[StrategyClass.__name__]
             if date_diff < required_days:
-                raise ValueError(
-                    f"{StrategyClass.__name__} 전략은 최소 {required_days}일 이상의 데이터가 필요합니다. 현재 기간: {date_diff}일")
+                continue
             strategy = StrategyClass(data, weights, req.initial_cash)
             raw_results = strategy.run()
+            max_total_return = float("-inf")
             for raw_result in raw_results:
                 metrics = calculate_metrics(
                     raw_result,
                     strategy=raw_result["strategy"],
                     rebalance=raw_result["rebalance"],
                     initial_cash=req.initial_cash,
-                    weights=weights
+                    weights=weights,
+                    start_date=str(req.start_date),
+                    end_date=str(req.end_date),
+                    date_diff=date_diff
                 )
                 results.append(metrics)
-                if metrics["total_return"] > max_total_return:
+                if date_diff > 180 and metrics["total_return"] > max_total_return:
                     max_total_return = max(max_total_return, metrics["total_return"])
                     max_strategy = copy.deepcopy(metrics)
                     max_strategy.pop("portfolio_growth", None)

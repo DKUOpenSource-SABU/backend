@@ -34,22 +34,29 @@ def cluster_analyze(pre: str, data: TickerList):
 # 클러스터링 결과를 기반으로 추천 티커를 반환하는 API
 # 작성자 : 김태형
 @router.post("/recommend")
-def recommend(data: TickerList):
+async def recommend(data: TickerList):
+    if data is None or not isinstance(data, TickerList):
+        return JSONResponse(status_code=400,
+                            content={"error": "Invalid input data."})
     if data.tickers is None or len(data.tickers) < 0:
         return JSONResponse(status_code=204,
                             content={"empty": "No Recommendation."})
-    top5_tickers = clustering.recommend.recommend(data.tickers)
-    if top5_tickers is None or top5_tickers.empty:
+    try:
+        top5_tickers = clustering.recommend.recommend(data.tickers)
+    except Exception as e:
+        return JSONResponse(status_code=500,
+                            content={"error": str(e)})
+    if top5_tickers is None:
         return JSONResponse(status_code=404,
                             content={"error": "No recommendations found."})
-    res = get_tickers_by_symbol(top5_tickers["ticker"].tolist())
+    res = get_tickers_by_symbol(top5_tickers)
     if not res:
         return JSONResponse(status_code=404,
                             content={"error": "No recommendations found."})
     return [item for symbol, item in res.items()][:50]
 
 @router.get("/sectors")
-def sector_analyze():
+async def sector_analyze():
     sectors_anlyze = get_pretrained_sectors()
     if sectors_anlyze is None or sectors_anlyze.empty:
         return JSONResponse(status_code=404,
