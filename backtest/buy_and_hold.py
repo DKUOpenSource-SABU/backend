@@ -29,9 +29,8 @@ class BuyAndHoldStrategy(bt.Strategy):
         else:
             self.month_peak[current_month] = max(self.month_peak.get(current_month, value), value)
 
-        if not hasattr(self, 'rebalanced'):
+        if self.p.rebalance_mode == "none":
             self.rebalance_portfolio()
-            self.rebalanced = True
 
         if self.p.rebalance_mode == "monthly":
             if not self.last_rebalance or dt.month != self.last_rebalance.month:
