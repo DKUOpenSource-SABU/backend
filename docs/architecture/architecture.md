@@ -2,7 +2,7 @@
 
 ## 시스템 구성도
 
-![architecture_image.png](%E1%84%8C%E1%85%A6%E1%84%86%E1%85%A9%E1%86%A8%20%E1%84%8B%E1%85%A5%E1%86%B9%E1%84%8B%E1%85%B3%E1%86%B7%./architecture_image.png)
+![시스템 구성도](./architecture_image.png)
 
 ---
 
@@ -76,28 +76,9 @@ backend/
 
 ---
 
-## 💡 실제 시스템 흐름 (프론트 기준)
+## 💡 데이터 수집 데이터 흐름도
 
-```
-flowchart TD
-    A[Frontend] --> B[Routers]
-    B --> C1[/collect/]
-    B --> C2[/cluster/]
-    B --> C3[/backtest/]
-
-    C1 --> D1[Collect
-collect_ticker.py
-tiingo_api.py]
-    C2 --> D2[Clustering
-kmeans_module.py
-diversification_score.py
-recommend.py]
-    C3 --> D3[Backtest
-backtest_runner.py
-buy_and_hold.py
-rsi.py
-sma_cross.py]
-```
+![데이터 수집 데이터 흐름도](./data_flow_image.png)
 
 ---
 
