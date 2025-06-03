@@ -30,7 +30,6 @@ networkx==3.2.1
 numpy==2.0.2
 packaging==25.0
 pandas==2.2.3
-pickle5==0.0.11
 pillow==11.2.1
 playwright==1.52.0
 pyarrow==20.0.0
