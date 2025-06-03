@@ -1,13 +1,16 @@
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
 
-# 모델과 토크나이저 로드
-tokenizer = AutoTokenizer.from_pretrained("ProsusAI/finbert")
-model = AutoModelForSequenceClassification.from_pretrained("ProsusAI/finbert")
+# 전역 변수로 선언하지 않고 Lazy하게 초기화
+nlp = None
 
-# 파이프라인 생성
-nlp = pipeline("sentiment-analysis", model=model, tokenizer=tokenizer)
-
+def get_pipeline():
+    global nlp
+    if nlp is None:
+        tokenizer = AutoTokenizer.from_pretrained("ProsusAI/finbert")
+        model = AutoModelForSequenceClassification.from_pretrained("ProsusAI/finbert")
+        nlp = pipeline("sentiment-analysis", model=model, tokenizer=tokenizer)
+    return nlp
 
 def semantic_analysis(text: str):
-    result = nlp(text)
-    return result
+    pipe = get_pipeline()
+    return pipe(text)

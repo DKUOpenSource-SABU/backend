@@ -5,6 +5,9 @@ import pandas as pd
 from scipy.spatial import ConvexHull
 import numpy as np
 from pathlib import Path
+import sqlite3
+import json
+
 
 from clustering.kmeans_module import *
 from clustering.sector_visualization import sector_visualization
@@ -12,6 +15,21 @@ from clustering.sector_visualization import sector_visualization
 
 # ------- DB 초기화 및 데이터 로딩 ------
 # 작성자 : 김태형
+DB_PATH = "./core/strategy.db"
+def init_db():
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS max_strategy (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                total_return REAL NOT NULL,
+                strategy TEXT NOT NULL
+            );
+        """)
+        conn.commit()
+
+# DB 초기화
+init_db()
+
 if not os.path.exists('./data/ticker_etf.csv') or \
     not os.path.exists('./data/ticker_stock.csv'):
     raise FileNotFoundError("필요한 CSV 파일이 존재하지 않습니다. \
@@ -102,6 +120,7 @@ def get_normal_outlier_data_db(df_symbols=None,
 
 # 재시작 시마다 k_means를 새로 계산하지 않도록 캐시 경로 설정
 CACHE_PATH = Path("models/pretrained_data.pkl")
+
 
 # k_means를 사용하여 사전 트레이닝 데이터 생성 함수
 # 이 함수는 캐시를 사용하여 성능을 최적화합니다.
@@ -219,25 +238,47 @@ def get_pretrained_sectors():
     return pretrained_sectors
 
 def get_max_strategy():
-    global max_strategy
-    return max_strategy
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.execute("""
+            SELECT total_return, strategy
+            FROM max_strategy
+            ORDER BY total_return DESC
+            LIMIT 5
+        """)
+        rows = cursor.fetchall()
+        return [
+            {
+                "total_return": r[0],
+                "strategy": json.loads(r[1])  # JSON 문자열 → dict
+            }
+            for r in rows
+        ]
 
 def update_max_strategy(max_total_return, strategy):
-    global max_strategy
-    if len(max_strategy) < 5:
-        max_strategy.append({
-            "total_return": max_total_return,
-            "strategy": strategy
-        })
-        return
-    for item in max_strategy:
-        if item["total_return"] < max_total_return:
-            if len(max_strategy) >= 5:
-                min_item = min(max_strategy, key=lambda x: x["total_return"])
-                max_strategy.remove(min_item)
-            max_strategy.append({
-                "total_return": max_total_return,
-                "strategy": strategy
-            })
-            return 
-    return 
+    strategy_json = json.dumps(strategy, sort_keys=True)  # dict → JSON 문자열
+
+    with sqlite3.connect(DB_PATH) as conn:
+        # 현재 개수 확인
+        cursor = conn.execute("SELECT COUNT(*) FROM max_strategy")
+        count = cursor.fetchone()[0]
+
+        if count < 5:
+            conn.execute("INSERT INTO max_strategy (total_return, strategy) VALUES (?, ?)",
+                         (max_total_return, strategy_json))
+            conn.commit()
+            return
+
+        # 최소 수익률 가져오기
+        cursor = conn.execute("""
+            SELECT id, total_return
+            FROM max_strategy
+            ORDER BY total_return ASC
+            LIMIT 1
+        """)
+        min_id, min_return = cursor.fetchone()
+
+        if max_total_return > min_return:
+            conn.execute("DELETE FROM max_strategy WHERE id = ?", (min_id,))
+            conn.execute("INSERT INTO max_strategy (total_return, strategy) VALUES (?, ?)",
+                         (max_total_return, strategy_json))
+            conn.commit()

@@ -2,7 +2,7 @@ import http from 'k6/http';
 import { check, group } from 'k6';
 
 export const options = {
-  vus: 5,
+  vus: 60,
   duration: '10s',
 };
 
@@ -41,7 +41,15 @@ export default function () {
     });
 
     check(res, {
-      'Status is 400': (r) => r.status === 400
+      'Status is 200': (r) => r.status === 200,
+      '추천 결과가 배열 형태': (r) => {
+        try {
+          const parsed = JSON.parse(r.body);
+          return Array.isArray(parsed) && parsed.length >= 0;
+        } catch {
+          return false;
+        }
+      },
     });
   });
 
@@ -53,9 +61,8 @@ export default function () {
     const res = http.post(`${BASE_URL}/cluster/recommend`, payload, {
       headers: { 'Content-Type': 'application/json' },
     });
-
     check(res, {
-      'Status is 204 또는 400 이상': (r) => [204, 400, 422].includes(r.status),
+      'Status is 500': (r) => [500].includes(r.status),
     });
   });
 

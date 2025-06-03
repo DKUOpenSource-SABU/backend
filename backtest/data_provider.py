@@ -1,6 +1,8 @@
 import pandas as pd
 from pathlib import Path
 
+
+
 DATA_PATH = Path("./data/stock").resolve()
 
 def load_data(tickers: list, start_date: str, end_date: str) -> dict:
