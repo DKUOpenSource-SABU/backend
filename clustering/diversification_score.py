@@ -85,8 +85,8 @@ def diversification_score_ndim(df, selected_tickers, weights):
     최종적으로 전체 종목 중 최대 거리로 정규화
     '''
     avg_df = replace_normal_avg(df)
-    if len(selected_tickers) < 4:
-        print("최소 4개 이상의 종목을 담아야 분산 투자 점수가 산정됩니다.")
+    if len(selected_tickers) < 2:
+        print("최소 2개 이상의 종목을 담아야 분산 투자 점수가 산정됩니다.")
         return None
     
     numeric_cols = avg_df.drop(columns=['ticker', 'cluster']).\
@@ -129,8 +129,8 @@ def diversification_score_ndim(df, selected_tickers, weights):
 # 작성자 : 김동혁
 def diversification_score_mixed(
         df, selected_tickers, weights, n_clusters=4, alpha=0.5):
-    if len(selected_tickers) < 4:
-        print("최소 4개 이상의 종목을 담아야 분산 투자 점수가 산정됩니다.")
+    if len(selected_tickers) < 2:
+        print("최소 2개 이상의 종목을 담아야 분산 투자 점수가 산정됩니다.")
         return None
     score_cluster = diversification_score_cluster(df, selected_tickers, weights, n_clusters)
     score_pca = diversification_score_ndim(df, selected_tickers, weights)
