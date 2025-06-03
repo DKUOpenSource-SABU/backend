@@ -6,3 +6,4 @@
 .*
 data/stock
 /**/node_modules/
+__pycache__/
