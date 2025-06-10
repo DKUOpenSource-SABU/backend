@@ -9,12 +9,10 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
-
-
 # 클러스터링 진행 중 발생하는 numpy 경고 무시
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-# 최소 1년치의 데이터를 가지고 있는 주식 정보 불러오기
+# 최소 1년치의 데이터를 가지고 있는 주식의 파일을 불러오는 함수
 # 작성자 : 김동혁
 def read_csv_files_year_filter(tickers=None):
     base_path = os.path.abspath('./data/stock/')
@@ -23,14 +21,16 @@ def read_csv_files_year_filter(tickers=None):
     # tickers가 주어지면 해당 ticker만 필터링
     if tickers is not None:
         tickers = set(tickers)
-        all_files = [f for f in all_files if os.path.splitext(os.path.basename(f))[0] in tickers]
+        all_files = [
+            f for f in all_files 
+            if os.path.splitext(os.path.basename(f))[0] in tickers
+        ]
     
     # 데이터 없는 파일 처리
     no_date_files = []
     for file_path in all_files:
         ticker = os.path.splitext(os.path.basename(file_path))[0]
         try:
-            # 헤더만 읽어서 컬럼명 확인
             df = pd.read_csv(file_path, nrows=1)
             if 'date' not in df.columns:
                 no_date_files.append(file_path)
@@ -58,24 +58,20 @@ def read_csv_files_year_filter(tickers=None):
             df_list.append(df)
     return df_list
 
-
 # 모든 종목이 공통으로 가지는 최소 기간 탐색
 # 작성자 : 김동혁
 def find_shortest_period(df_list):
     min_dates = []
     max_dates = []
-
     for df in df_list:
         min_dates.append(df['date'].min())
         max_dates.append(df['date'].max())
-
-    # 모든 종목이 공통으로 갖는 기간
     start_date = max(min_dates)
     end_date = max(max_dates)
     return start_date, end_date
 
-
-# 상장폐지 종목 제거 (마지막 데이터가 최신 데이터가 아닌 과거 데이터)
+# 상장폐지 종목 제거
+# 마지막 데이터가 최신 데이터가 아닌 과거 데이터인 경우
 # 작성자 : 김동혁
 def removed_stocks(df_list, end_date):
     # end_date가 존재하지 않는(상장폐지된) 종목 제거
@@ -89,18 +85,15 @@ def removed_stocks(df_list, end_date):
             filtered_df_list.append(df)
     return filtered_df_list
 
-
 # 탐색한 최소 기간의 데이터만 추출
 # 작성자 : 김동혁
 def same_period(df_list, start_date, end_date):
     trimmed_list = []
-
     for df in df_list:
         mask = (df['date'] >= start_date) & (df['date'] <= end_date)
         trimmed_df = df.loc[mask].copy()
         trimmed_list.append(trimmed_df)
     return trimmed_list
-
 
 # 가격 정보를 이용한 지표 생성 및 추출
 # 작성자 : 김동혁
@@ -116,7 +109,6 @@ def extract_features(df):
         rsi = 100 - (100 / (1 + rs))  # RSI 공식
         return rsi
     
-
     # MDD 계산
     def calculate_mdd(series):
         roll_max = series.cummax()  # 누적 최고가 시계열
@@ -124,29 +116,25 @@ def extract_features(df):
         mdd = drawdown.min()
         return mdd
 
-
     # 6개월 지표 계산 (이동평균, 수익률, 변동성)
     def calc_6m_features(df):
         df_6m = df.tail(126)
         ma_6m = df_6m['close'].mean()
         ret_6m = (df_6m['close'].iloc[-1] / df_6m['close'].iloc[0]) - 1
-        # 최근 6개월 변동성 (로그수익률 표준편차 × sqrt(252)로 연환산)
         logret = np.log(df_6m['close'] / df_6m['close'].shift(1)).dropna()
         vola_6m = logret.std() * np.sqrt(252)  # 연율화
         return ma_6m, ret_6m, vola_6m
 
-    
     ticker = df['ticker'].unique()[0]
-    ma60 = df['close'].rolling(window=60).mean().iloc[-1]  # 60일 이동평균
-    ret = (df['close'].iloc[-1] / df['close'].iloc[0]) - 1  # 전체 기간 수익률
-    vola = df['close'].pct_change().rolling(window=30).std().mean()  # 30일 변동성
+    ma60 = df['close'].rolling(window=60).mean().iloc[-1]
+    ret = (df['close'].iloc[-1] / df['close'].iloc[0]) - 1
+    vola = df['close'].pct_change().rolling(window=30).std().mean()
     rsi = calculate_rsi(df['close'], 14).iloc[-1]
     mdd = calculate_mdd(df['close'])
     avg_vol = df['volume'].mean()  # 평균 거래량
     ma_6m, ret_6m, vola_6m = calc_6m_features(df)
     
     return [ticker, ma60, ma_6m, ret, ret_6m, vola, vola_6m, rsi, mdd, avg_vol]
-
 
 # 추출한 지표를 가지고 데이터프레임 구성 및 결측치 제거
 # 작성자 : 김동혁
@@ -156,33 +144,25 @@ def make_feature_df(df_list):
         'Vol_30', 'Vol_6M', 'RSI_14', 'MDD', 'Avg_Volume'
     ]
     features_list = []
-
     for df in df_list:
         feats = extract_features(df)
         features_list.append(feats)
-
     features_df = pd.DataFrame(features_list, columns=feature_names)
     features_df = features_df.dropna()  # 결측치 제거
     return features_df
 
-
 # Isolation Forest을 이용하여 이상치 탐색
 # 작성자 : 김동혁
 def find_outlier(df):
-    # 각 데이터 포인트가 여러 개의 랜덤 결정 트리에서 고립되는 데 필요한 경로 길이(depth)를 기준으로 이상치 판단
-    clf = IsolationForest(contamination=0.05, random_state=42)  # 전체의 5%를 이상치로 간주
+    # 전체의 5%를 이상치로 간주
+    clf = IsolationForest(contamination=0.05, random_state=42)
     clf.fit(df.drop(columns=['ticker']))
     df['outlier'] = clf.predict(df.drop(columns=['ticker']))
-    
-    # 정상 데이터
     normal_df = df[df['outlier'] == 1].copy().drop(columns=['outlier'])
     normal_df = normal_df.reset_index(drop=True)
-    # 이상치 데이터
     outlier_df = df.loc[df['outlier'] == -1].drop(columns=['outlier'])
     outlier_df = outlier_df.reset_index(drop=True)
-    
     return normal_df, outlier_df
-
 
 # 엘보우 기법을 이용하여 K-Means 클러스터링에 필요한 최적의 k 탐색
 # 작성자 : 김동혁
@@ -193,7 +173,6 @@ def optimization_k(df):
         kmeans.fit(df)
         inertias.append(kmeans.inertia_)
     
-
     # 엘보우 포인트 자동 탐지 함수
     def find_elbow_point(x, y):
         x1, y1 = x[0], y[0]
@@ -205,10 +184,9 @@ def optimization_k(df):
             distances.append(numerator / denominator)
         return np.argmax(distances) + 1  # +1은 K가 1부터 시작할 때
     
-
-    optimal_k = find_elbow_point(np.array(list(range(1, 11))), np.array(inertias))
+    optimal_k = find_elbow_point(np.array(list(range(1, 11))), 
+                                 np.array(inertias))
     return optimal_k
-
 
 # K-Means 클러스터링 및 시각화에 필요한 정보 2차원 축소
 # 작성자 : 김동혁
@@ -224,7 +202,6 @@ def k_means(tickers=None):
     features_df = make_feature_df(trimmed_list)
     normal_df, outlier_df = find_outlier(features_df)
 
-    # 스케일링
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(normal_df.drop(columns=['ticker']))
 
@@ -242,18 +219,14 @@ def k_means(tickers=None):
     # 클러스터별 PC1, PC2 평균값
     pca_means = normal_df.groupby('cluster')[['PC1', 'PC2']].mean()
 
-    # 이상치 데이터 스케일링
     outlier_scaled = scaler.transform(outlier_df.drop(columns=['ticker']))
-
     # 학습된 클러스터링 모델에 이상치 데이터 넣어 분류
     outlier_clusters = kmeans.predict(outlier_scaled)
     outlier_df.loc[:, 'cluster'] = outlier_clusters
-
     # 이상치 데이터 2차원 축소값 정상치 데이터의 평균값으로 대체
     outlier_df['PC1'] = outlier_df['cluster'].map(pca_means['PC1'])
     outlier_df['PC2'] = outlier_df['cluster'].map(pca_means['PC2'])
 
-    # 정상 데이터, 이상치 데이터 결합
     combined_df = pd.concat([normal_df, outlier_df], axis=0)
     result_df = combined_df[['ticker', 'PC1', 'PC2', 'cluster']]
 

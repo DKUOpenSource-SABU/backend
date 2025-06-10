@@ -60,26 +60,37 @@ df = pd.concat([df_stock[common_cols],
 print("DB Create Complete...")
 
 
-# ------- 데이터 정상치/이상치 분리 -------
+# ------- feature 추출 및 데이터 정상치/이상치 분리 -------
 # 작성자 : 김동혁
 
-# 재시작 할 때마다 새로 정상치/이상치 분류를 하지 않도록 캐시 경로 설정
+# 재시작 할 때마다 새로 feature 추출 및 정상치/이상치 분류를 하지 않도록 캐시 경로 설정
+FEATURE_CACHE_PATH = Path("models/pretrained_feature.pkl")
 NORMAL_OUTLIER_CACHE_PATH = Path("models/pretrained_normal_outlier.pkl")
 
+# make_feature를 사용하여 사전에 feature 추출
 # find_outlier를 사용하여 사전에 정상치/이상치 데이터 분리
 # 작성자 : 김동혁
-def get_normal_outlier_data_db(df_symbols=None,
+def get_feature_data_db(df_symbols=None,
                             *,
                             force_refresh=False,
+                            feature_cache_path=FEATURE_CACHE_PATH,
                             normal_outlier_cache_path=NORMAL_OUTLIER_CACHE_PATH):
     if df_symbols is None:
         df_symbols = df['SYMBOL'][:-1].tolist()
-    if normal_outlier_cache_path.exists() and not force_refresh:
-        with normal_outlier_cache_path.open("rb") as f3:
-            print(f"📄 캐시 로드: {normal_outlier_cache_path}")
-            return pickle.load(f3)
+    
+    if feature_cache_path.exists() and normal_outlier_cache_path.exists()\
+        and not force_refresh:
+        with feature_cache_path.open("rb") as f1,\
+            normal_outlier_cache_path.open("rb") as f2:
+            print(f"📄 캐시 로드: {feature_cache_path}, {normal_outlier_cache_path}")
+            return pickle.load(f1), pickle.load(f2)
 
-    print("🧮 normal 및 outlier 재계산 중 …")
+    # if normal_outlier_cache_path.exists() and not force_refresh:
+    #     with normal_outlier_cache_path.open("rb") as f2:
+    #         print(f"📄 캐시 로드: {normal_outlier_cache_path}")
+    #         return pickle.load(f2)
+        
+    print("🧮 feature 및 normal, outlier 재계산 중 …")
     # 1. 전체 데이터 로딩 및 전처리
     df_list = read_csv_files_year_filter(df_symbols)
     if df_list is None:
@@ -98,12 +109,17 @@ def get_normal_outlier_data_db(df_symbols=None,
         raise ValueError("same_period 함수가 None을 반환했습니다. 데이터 확인이 필요합니다.")
     
     # 2. 특성 추출
-    feature_df = make_feature_df(trimmed_list)
-    if feature_df is None:
+    pretrained_feature_data = make_feature_df(trimmed_list)
+    if pretrained_feature_data is None:
         raise ValueError("make_feature_df 함수가 None을 반환했습니다. 데이터 확인이 필요합니다.")
-    
+
+    feature_cache_path.parent.mkdir(parents=True, exist_ok=True)
+    with feature_cache_path.open("wb") as f:
+        pickle.dump(pretrained_feature_data, f)
+        print(f"💾feature 캐시 저장 완료: {feature_cache_path}")
+
     # 3. 이상치 처리
-    pretrained_normal_data, pretrained_outlier_data = find_outlier(feature_df)
+    pretrained_normal_data, pretrained_outlier_data = find_outlier(pretrained_feature_data)
     if (pretrained_normal_data is None) or (pretrained_outlier_data is None):
         raise ValueError("find_outlier 함수가 None을 반환했습니다. 데이터 확인이 필요합니다.")
 
@@ -112,7 +128,7 @@ def get_normal_outlier_data_db(df_symbols=None,
         pickle.dump((pretrained_normal_data, pretrained_outlier_data), f)
         print(f"💾정상치/이상치 캐시 저장 완료: {normal_outlier_cache_path}")
 
-    return pretrained_normal_data, pretrained_outlier_data
+    return pretrained_feature_data, pretrained_normal_data, pretrained_outlier_data
 
 
 # ------- 모든 주가 데이터 사전 트레이닝 -------
@@ -161,7 +177,8 @@ def get_pretrained_data_db(df_symbols=None,
 
 # 사전 트레이닝 데이터 로딩
 print("Pretraining...")
-pretrained_normal_data, pretrained_outlier_data = get_normal_outlier_data_db()
+pretrained_feature_data, pretrained_normal_data, pretrained_outlier_data = \
+    get_feature_data_db()
 pretrained_data, pretrained_sectors = get_pretrained_data_db()
 cluster_map = pretrained_data.set_index("ticker")["cluster"].to_dict()
 
@@ -204,6 +221,12 @@ def get_all_tickers():
 def get_hull_list():
     global hull_list
     return hull_list
+
+# 데이터의 feature를 추출하는 함수
+# 작성자 : 김동혁
+def get_pretrained_feature():
+    global pretrained_feature_data
+    return pretrained_feature_data
 
 # 수집한 데이터의 정상치/이상치 데이터를 분류하는 함수
 # 작성자 : 김동혁
